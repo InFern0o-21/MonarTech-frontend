@@ -54,14 +54,14 @@ export default function SelectMenu({ value, onChange, options = [], placeholder 
   }, [open])
 
   const P = {
-    bg:      dark ? '#1e1e2e'                    : 'var(--color-surface)',
-    surface: dark ? '#252535'                    : 'var(--color-surface-2)',
-    border:  dark ? 'rgba(255,255,255,0.10)'     : 'var(--color-border)',
-    text:    dark ? '#ffffff'                    : 'var(--color-text)',
-    muted:   dark ? 'rgba(255,255,255,0.35)'     : 'var(--color-text-muted)',
-    primary: '#6366f1',
-    accent:  '#a78bfa',
-    hover:   dark ? 'rgba(99,102,241,0.15)'      : 'rgba(99,102,241,0.08)',
+    bg:      'var(--color-surface)',
+    surface: 'var(--color-surface-2)',
+    border:  'var(--color-border)',
+    text:    'var(--color-text)',
+    muted:   'var(--color-text-muted)',
+    primary: 'var(--color-primary)',
+    accent:  'var(--color-accent)',
+    hover:   'var(--color-primary-dim)',
   }
 
   const selected = options.find(o => String(o.value) === String(value))

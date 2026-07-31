@@ -70,13 +70,13 @@ export default function DatePicker({ value, onChange, placeholder = 'Pick a date
   const isToday = (day,cur) => cur && today.getFullYear()===viewYear && today.getMonth()===viewMonth && today.getDate()===day
 
   const P = {
-    bg:      dark ? '#1e1e2e'                : 'var(--color-surface)',
-    surface: dark ? '#252535'                : 'var(--color-surface-2)',
-    border:  dark ? 'rgba(255,255,255,0.10)' : 'var(--color-border)',
-    text:    dark ? '#fff'                   : 'var(--color-text)',
-    muted:   dark ? 'rgba(255,255,255,0.35)' : 'var(--color-text-muted)',
-    primary: '#6366f1',
-    accent:  '#a78bfa',
+    bg:      'var(--color-surface)',
+    surface: 'var(--color-surface-2)',
+    border:  'var(--color-border)',
+    text:    'var(--color-text)',
+    muted:   'var(--color-text-muted)',
+    primary: 'var(--color-primary)',
+    accent:  'var(--color-accent)',
   }
 
   const displayValue = selected

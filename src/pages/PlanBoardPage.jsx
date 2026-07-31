@@ -21,17 +21,20 @@ const PRIORITY_OPTIONS = [
 const nativeSelectStyle = {
   width: '100%', height: 38, padding: '0 10px',
   borderRadius: 8, boxSizing: 'border-box',
-  border: '1.5px solid rgba(255,255,255,0.10)',
-  background: '#252535', color: '#ffffff',
+  border: '1.5px solid var(--color-border)',
+  background: 'var(--color-surface-2)', color: 'var(--color-text)',
   colorScheme: 'dark', fontSize: 14,
   fontFamily: 'var(--font-sans)', outline: 'none', cursor: 'pointer',
 }
 
 const P = {
-  bg: '#1e1e2e', surface: '#252535',
-  border: 'rgba(255,255,255,0.10)',
-  text: '#fff', muted: 'rgba(255,255,255,0.35)',
-  accent: '#6366f1', success: '#4ade80',
+  bg:      'var(--color-surface)',
+  surface: 'var(--color-surface-2)',
+  border:  'var(--color-border)',
+  text:    'var(--color-text)',
+  muted:   'var(--color-text-muted)',
+  accent:  'var(--color-primary)',
+  success: 'var(--color-success)',
 }
 
 // ─── AssigneesSection ─────────────────────────────────────────────────────────
@@ -82,7 +85,7 @@ function AssigneesSection({ task, planId, planWorkgroup, canEdit, currentUserId,
         <label className="panel-label" style={{ marginBottom:0 }}>👤 Assignees</label>
         {canEdit && (isPersonal || candidates.length > 0) && (
           <button type="button" onClick={() => { setShowPicker(v=>!v); setSearchInput(''); setSearchError('') }}
-            style={{ background:'rgba(99,102,241,0.15)', border:'1px solid rgba(99,102,241,0.3)', borderRadius:6, color:P.accent, fontSize:12, fontWeight:600, padding:'3px 10px', cursor:'pointer', fontFamily:'var(--font-sans)' }}
+            className="btn-action-sm"
           >{showPicker ? 'Cancel' : '+ Assign'}</button>
         )}
       </div>
@@ -92,7 +95,7 @@ function AssigneesSection({ task, planId, planWorkgroup, canEdit, currentUserId,
             {assignees.map(a => {
               const isMe = a.user === currentUserId
               return (
-                <div key={a.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 10px', borderRadius:8, background: isMe?'rgba(99,102,241,0.12)':'rgba(255,255,255,0.04)', border:`1px solid ${isMe?'rgba(99,102,241,0.3)':'transparent'}` }}>
+                <div key={a.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 10px', borderRadius:8, background: isMe?'var(--color-primary-dim)':'rgba(255,255,255,0.04)', border:`1px solid ${isMe?'rgba(99,102,241,0.3)':'transparent'}` }}>
                   <div style={{ width:26, height:26, borderRadius:'50%', background: isMe?'rgba(99,102,241,0.4)':'rgba(255,255,255,0.12)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#fff', flexShrink:0 }}>
                     {(a.username??'?')[0].toUpperCase()}
                   </div>
@@ -115,7 +118,7 @@ function AssigneesSection({ task, planId, planWorkgroup, canEdit, currentUserId,
             <input value={searchInput} onChange={e=>{setSearchInput(e.target.value);setSearchError('')}}
               placeholder="Username or email" autoFocus className="panel-input" style={{ flex:1 }} />
             <button type="submit" disabled={adding==='search'||!searchInput.trim()}
-              style={{ height:38, padding:'0 12px', borderRadius:8, border:'none', background:P.accent, color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'var(--font-sans)', flexShrink:0, opacity:adding==='search'?0.7:1 }}>
+              className="btn btn-primary btn-sm" style={{ flexShrink:0, opacity:adding==='search'?0.7:1 }}>
               {adding==='search'?'…':'Add'}
             </button>
           </div>
@@ -126,7 +129,7 @@ function AssigneesSection({ task, planId, planWorkgroup, canEdit, currentUserId,
           {candidates.map((m,i) => (
             <button key={m.user} type="button" disabled={adding===m.user} onClick={()=>handleAddById(m.user)}
               style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:'8px 12px', border:'none', borderBottom: i<candidates.length-1?`1px solid ${P.border}`:'none', background:'rgba(255,255,255,0.03)', color:P.text, fontSize:13, cursor:'pointer', fontFamily:'var(--font-sans)', opacity:adding===m.user?0.6:1 }}
-              onMouseEnter={e=>e.currentTarget.style.background='rgba(99,102,241,0.1)'}
+              onMouseEnter={e=>e.currentTarget.style.background='var(--color-primary-dim)'}
               onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.03)'}>
               <div style={{ width:26, height:26, borderRadius:'50%', background:'rgba(255,255,255,0.12)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#fff', flexShrink:0 }}>
                 {(m.username??'?')[0].toUpperCase()}
@@ -189,7 +192,7 @@ function AttachmentsSection({ taskId, canEdit }) {
         {canEdit && (
           <>
             <button type="button" onClick={()=>fileRef.current?.click()} disabled={uploading}
-              style={{ background:'rgba(99,102,241,0.15)', border:'1px solid rgba(99,102,241,0.3)', borderRadius:6, color:P.accent, fontSize:12, fontWeight:600, padding:'3px 10px', cursor:'pointer', fontFamily:'var(--font-sans)', opacity:uploading?0.6:1 }}>
+              className="btn-action-sm" style={{ opacity:uploading?0.6:1 }}>
               {uploading?'Uploading…':'+ Add'}
             </button>
             <input ref={fileRef} type="file" style={{ display:'none' }} onChange={handleUpload} />
@@ -260,7 +263,7 @@ function ChecklistSection({ taskId, canEdit }) {
         <label className="panel-label" style={{ marginBottom:0 }}>☑ Checklist {total>0&&`${done}/${total}`}</label>
         {canEdit && (
           <button type="button" onClick={()=>setShowForm(v=>!v)}
-            style={{ background:'rgba(99,102,241,0.15)', border:'1px solid rgba(99,102,241,0.3)', borderRadius:6, color:P.accent, fontSize:12, fontWeight:600, padding:'3px 10px', cursor:'pointer', fontFamily:'var(--font-sans)' }}>
+            className="btn-action-sm">
             {showForm?'Cancel':'+ Add item'}
           </button>
         )}
@@ -292,7 +295,7 @@ function ChecklistSection({ taskId, canEdit }) {
         <form onSubmit={handleAdd} style={{ display:'flex', gap:6, marginTop:8 }}>
           <input value={newText} onChange={e=>setNewText(e.target.value)} placeholder="Add an item…" autoFocus className="panel-input" style={{ flex:1 }} />
           <button type="submit" disabled={adding||!newText.trim()}
-            style={{ height:38, padding:'0 12px', borderRadius:8, border:'none', background:P.accent, color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'var(--font-sans)', flexShrink:0, opacity:adding?0.7:1 }}>
+            className="btn btn-primary btn-sm" style={{ flexShrink:0, opacity:adding?0.7:1 }}>
             {adding?'…':'Add'}
           </button>
         </form>
@@ -368,7 +371,7 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
         style={{
           position:'fixed', zIndex:51,
           fontFamily:'var(--font-sans)',
-          background: P.bg,
+          background: 'var(--gradient-card)',
           display:'flex', flexDirection:'column',
 
           /* ── mobile: bottom sheet ── */
@@ -421,7 +424,7 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
                       style={{
                         height:28, padding:'0 10px', borderRadius:14,
                         border: active ? `1.5px solid ${s.color || P.accent}` : `1.5px solid rgba(255,255,255,0.1)`,
-                        background: active ? (s.color ? s.color + '22' : 'rgba(99,102,241,0.18)') : 'rgba(255,255,255,0.04)',
+                        background: active ? (s.color ? s.color + '22' : 'var(--color-primary-dim)') : 'rgba(255,255,255,0.04)',
                         color: active ? (s.color || P.accent) : 'rgba(255,255,255,0.45)',
                         fontSize:12, fontWeight: active ? 700 : 500,
                         cursor: active ? 'default' : 'pointer',
@@ -647,7 +650,7 @@ function TaskFormModal({ planId, statuses, createTask, onCreated, onClose }) {
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-5">
       <div aria-hidden onClick={onClose} className="absolute inset-0" style={{ background:'rgba(0,0,0,0.6)' }} />
       <div role="dialog" aria-modal aria-label="New task"
-        style={{ position:'relative', width:'100%', maxWidth:480, borderRadius:16, padding:24, background:P.bg, border:`1px solid ${P.border}`, fontFamily:'var(--font-sans)' }}>
+        style={{ position:'relative', width:'100%', maxWidth:480, borderRadius:16, padding:24, background:'var(--gradient-card)', border:`1px solid ${P.border}`, fontFamily:'var(--font-sans)' }}>
         <h2 style={{ margin:'0 0 20px', fontSize:18, fontWeight:700, color:'#fff' }}>New Task</h2>
         <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:14 }}>
           <div>
@@ -670,11 +673,11 @@ function TaskFormModal({ planId, statuses, createTask, onCreated, onClose }) {
           </div>
           <div style={{ display:'flex', gap:8, marginTop:4 }}>
             <button type="submit" disabled={saving}
-              style={{ flex:1, height:42, borderRadius:9, border:'none', background:'var(--color-primary)', color:'#fff', fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'var(--font-sans)', opacity:saving?0.7:1 }}>
+              className="btn btn-primary" style={{ flex:1, height:42, borderRadius:9, opacity:saving?0.7:1 }}>
               {saving?'Creating…':'Create Task'}
             </button>
             <button type="button" onClick={onClose}
-              style={{ height:42, padding:'0 18px', borderRadius:9, border:`1px solid ${P.border}`, background:'none', color:'rgba(255,255,255,0.6)', fontSize:14, cursor:'pointer', fontFamily:'var(--font-sans)' }}>
+              className="btn btn-ghost" style={{ height:42, padding:'0 18px', borderRadius:9 }}>
               Cancel
             </button>
           </div>
@@ -746,7 +749,7 @@ function ManageStatusesModal({ planId, statuses, onClose, createStatus, updateSt
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-5">
       <div aria-hidden onClick={onClose} className="absolute inset-0" style={{ background:'rgba(0,0,0,0.65)' }} />
       <div role="dialog" aria-modal aria-label="Manage statuses"
-        style={{ position:'relative', width:'100%', maxWidth:460, borderRadius:16, background:P.bg, border:`1px solid ${P.border}`, fontFamily:'var(--font-sans)', maxHeight:'90vh', display:'flex', flexDirection:'column' }}>
+        style={{ position:'relative', width:'100%', maxWidth:460, borderRadius:16, background:'var(--gradient-card)', border:`1px solid ${P.border}`, fontFamily:'var(--font-sans)', maxHeight:'90vh', display:'flex', flexDirection:'column' }}>
 
         {/* Header */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', borderBottom:`1px solid ${P.border}` }}>
@@ -764,13 +767,13 @@ function ManageStatusesModal({ planId, statuses, onClose, createStatus, updateSt
                 <form onSubmit={handleUpdate} style={{ display:'flex', flexDirection:'column', gap:8, padding:12, borderRadius:10, background:'rgba(255,255,255,0.04)', border:`1px solid ${P.border}` }}>
                   <div style={{ display:'flex', gap:8 }}>
                     <input value={editName} onChange={e=>setEditName(e.target.value)} placeholder="Status name" autoFocus
-                      style={{ flex:1, height:36, padding:'0 10px', borderRadius:8, border:`1.5px solid ${P.border}`, background:'#252535', color:'#fff', fontSize:13, fontFamily:'var(--font-sans)', outline:'none' }} />
+                      style={{ flex:1, height:36, padding:'0 10px', borderRadius:8, border:`1.5px solid ${P.border}`, background:'var(--color-surface)', color:'var(--color-text)', fontSize:13, fontFamily:'var(--font-sans)', outline:'none' }} />
                     <input type="color" value={editColor || '#6366f1'} onChange={e=>setEditColor(e.target.value)}
-                      style={{ width:36, height:36, padding:2, borderRadius:8, border:`1.5px solid ${P.border}`, background:'#252535', cursor:'pointer' }} title="Pick a color" />
+                      style={{ width:36, height:36, padding:2, borderRadius:8, border:`1.5px solid ${P.border}`, background:'var(--color-surface)', cursor:'pointer' }} title="Pick a color" />
                   </div>
                   <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                     <input type="number" value={editOrder} onChange={e=>setEditOrder(Number(e.target.value))} placeholder="Order"
-                      style={{ width:70, height:34, padding:'0 8px', borderRadius:8, border:`1.5px solid ${P.border}`, background:'#252535', color:'#fff', fontSize:13, fontFamily:'var(--font-sans)', outline:'none' }} />
+                      style={{ width:70, height:34, padding:'0 8px', borderRadius:8, border:`1.5px solid ${P.border}`, background:'var(--color-surface)', color:'var(--color-text)', fontSize:13, fontFamily:'var(--font-sans)', outline:'none' }} />
                     <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, color:'rgba(255,255,255,0.6)', cursor:'pointer', userSelect:'none' }}>
                       <input type="checkbox" checked={editTerm} onChange={e=>setEditTerm(e.target.checked)} style={{ accentColor:P.accent }} />
                       Mark as "Done" (terminal)
@@ -778,11 +781,11 @@ function ManageStatusesModal({ planId, statuses, onClose, createStatus, updateSt
                   </div>
                   <div style={{ display:'flex', gap:8 }}>
                     <button type="submit" disabled={saving}
-                      style={{ flex:1, height:34, borderRadius:8, border:'none', background:P.accent, color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'var(--font-sans)', opacity:saving?0.7:1 }}>
+                      className="btn btn-primary btn-sm" style={{ flex:1, opacity:saving?0.7:1 }}>
                       {saving ? 'Saving…' : 'Save'}
                     </button>
                     <button type="button" onClick={()=>setEditingId(null)}
-                      style={{ height:34, padding:'0 14px', borderRadius:8, border:`1px solid ${P.border}`, background:'none', color:'rgba(255,255,255,0.5)', fontSize:13, cursor:'pointer', fontFamily:'var(--font-sans)' }}>
+                      className="btn btn-ghost btn-sm">
                       Cancel
                     </button>
                   </div>
@@ -808,16 +811,16 @@ function ManageStatusesModal({ planId, statuses, onClose, createStatus, updateSt
             <form onSubmit={handleCreate} style={{ display:'flex', flexDirection:'column', gap:8 }}>
               <div style={{ display:'flex', gap:8 }}>
                 <input value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Status name (e.g. In Review)"
-                  style={{ flex:1, height:36, padding:'0 10px', borderRadius:8, border:`1.5px solid ${P.border}`, background:'#252535', color:'#fff', fontSize:13, fontFamily:'var(--font-sans)', outline:'none' }} />
+                  style={{ flex:1, height:36, padding:'0 10px', borderRadius:8, border:`1.5px solid ${P.border}`, background:'var(--color-surface)', color:'var(--color-text)', fontSize:13, fontFamily:'var(--font-sans)', outline:'none' }} />
                 <input type="color" value={newColor} onChange={e=>setNewColor(e.target.value)}
-                  style={{ width:36, height:36, padding:2, borderRadius:8, border:`1.5px solid ${P.border}`, background:'#252535', cursor:'pointer' }} title="Pick a color" />
+                  style={{ width:36, height:36, padding:2, borderRadius:8, border:`1.5px solid ${P.border}`, background:'var(--color-surface)', cursor:'pointer' }} title="Pick a color" />
               </div>
               <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, color:'rgba(255,255,255,0.6)', cursor:'pointer', userSelect:'none' }}>
                 <input type="checkbox" checked={newTerm} onChange={e=>setNewTerm(e.target.checked)} style={{ accentColor:P.accent }} />
                 Mark as "Done" (terminal)
               </label>
               <button type="submit" disabled={saving || !newName.trim()}
-                style={{ height:36, borderRadius:8, border:'none', background:'rgba(99,102,241,0.2)', color:P.accent, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'var(--font-sans)', opacity:saving||!newName.trim()?0.5:1, border:`1px solid rgba(99,102,241,0.3)` }}>
+                className="btn-action-sm" style={{ width:'100%', padding:'7px 12px', opacity:saving||!newName.trim()?0.5:1 }}>
                 {saving ? 'Adding…' : '+ Add Status'}
               </button>
             </form>

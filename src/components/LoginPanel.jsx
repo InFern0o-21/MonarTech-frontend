@@ -7,11 +7,11 @@ import apiClient from '../lib/apiClient'
 
 // Hardcoded panel colors — no CSS variables to avoid inheritance issues
 const P = {
-  bg:          '#1e1e2e',
-  bgInput:     '#2a2a3d',
-  bgInputHover:'#303045',
-  border:      'rgba(255,255,255,0.10)',
-  borderFocus: '#6366f1',
+  bg:          '#160a21',
+  bgInput:     'rgba(26,15,36,0.4)',
+  bgInputHover:'rgba(38,21,54,0.6)',
+  border:      'rgba(223,207,190,0.20)',
+  borderFocus: '#dfcfbe',
   accent:      '#6366f1',
   accentHover: '#7c7ff5',
   text:        '#ffffff',

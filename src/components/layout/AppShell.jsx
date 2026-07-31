@@ -32,7 +32,7 @@ export default function AppShell() {
         className="flex flex-col flex-1 overflow-hidden transition-[margin-left] duration-300"
         style={{ marginLeft: isMobile ? 0 : 220 }}
       >
-        {isMobile && <TopHeader onMenuClick={() => setSidebarOpen(true)} />}
+        <TopHeader onMenuClick={() => setSidebarOpen(true)} />
         <main
           className="flex-1 overflow-y-auto p-8"
           style={{ background: 'var(--color-bg)' }}

@@ -5,15 +5,15 @@ import logoMark from '../assets/logo/monartech-mark.svg'
 
 // Hardcoded palette — no CSS variables so nothing can silently fail
 const C = {
-  bg:          '#0a0a0f',
-  surface:     '#111118',
-  surface2:    '#1a1a24',
-  border:      'rgba(255,255,255,0.08)',
-  borderHover: 'rgba(255,255,255,0.16)',
+  bg:          '#0c0612',
+  surface:     '#160a21',
+  surface2:    'rgba(26,15,36,0.6)',
+  border:      'rgba(223,207,190,0.08)',
+  borderHover: 'rgba(223,207,190,0.18)',
   primary:     '#6366f1',
   primaryHov:  '#7c7ff5',
   primaryDim:  'rgba(99,102,241,0.15)',
-  accent:      '#a78bfa',
+  accent:      '#dfcfbe',   /* gold — accents only */
   text:        '#ffffff',
   textSub:     'rgba(255,255,255,0.65)',
   textMuted:   'rgba(255,255,255,0.35)',

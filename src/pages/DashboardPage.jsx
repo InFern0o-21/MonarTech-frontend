@@ -12,9 +12,9 @@ function getInitials(user) {
 }
 
 const ROLE_BADGE = {
-  owner:  { background: 'rgba(99,102,241,0.18)',  color: '#818cf8' },
-  admin:  { background: 'rgba(167,139,250,0.18)', color: '#a78bfa' },
-  member: { background: 'rgba(255,255,255,0.08)', color: 'rgba(240,240,248,0.5)' },
+  owner:  { background: 'var(--color-primary-dim)',          color: 'var(--color-primary)' },
+  admin:  { background: 'rgba(167,139,250,0.18)',            color: '#a78bfa' },
+  member: { background: 'rgba(255,255,255,0.08)',            color: 'rgba(240,240,248,0.5)' },
 }
 
 // ─── WorkgroupChip ────────────────────────────────────────────────────────────
@@ -28,9 +28,9 @@ function WorkgroupChip({ wg, selected, onClick }) {
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 7,
         height: 36, padding: '0 14px', borderRadius: 18,
-        border: selected ? '1.5px solid #6366f1' : '1.5px solid var(--color-border)',
-        background: selected ? 'rgba(99,102,241,0.15)' : 'var(--color-surface-2)',
-        color: selected ? '#a5b4fc' : 'var(--color-text-muted)',
+        border: selected ? '1.5px solid var(--color-primary)' : '1.5px solid var(--color-border)',
+        background: selected ? 'var(--color-primary-dim)' : 'var(--color-surface-2)',
+        color: selected ? 'var(--color-text)' : 'var(--color-text-muted)',
         fontSize: 13, fontWeight: selected ? 600 : 500,
         cursor: 'pointer', transition: 'all 0.15s',
         fontFamily: 'var(--font-sans)',
@@ -266,7 +266,7 @@ export default function DashboardPage() {
                   My Workgroups
                 </h2>
               </div>
-              <Link to="/workgroups" className="text-[13px] font-medium no-underline" style={{ color: 'var(--color-primary)' }}>
+              <Link to="/workgroups" className="text-[13px] font-medium no-underline" style={{ color: 'var(--color-accent)' }}>
                 Manage →
               </Link>
             </div>
@@ -279,9 +279,9 @@ export default function DashboardPage() {
                 onClick={() => setSelectedWg(null)}
                 style={{
                   height: 36, padding: '0 14px', borderRadius: 18,
-                  border: selectedWg === null ? '1.5px solid #6366f1' : '1.5px solid var(--color-border)',
-                  background: selectedWg === null ? 'rgba(99,102,241,0.15)' : 'var(--color-surface-2)',
-                  color: selectedWg === null ? '#a5b4fc' : 'var(--color-text-muted)',
+                  border: selectedWg === null ? '1.5px solid var(--color-primary)' : '1.5px solid var(--color-border)',
+                  background: selectedWg === null ? 'var(--color-primary-dim)' : 'var(--color-surface-2)',
+                  color: selectedWg === null ? 'var(--color-text)' : 'var(--color-text-muted)',
                   fontSize: 13, fontWeight: selectedWg === null ? 600 : 500,
                   cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-sans)',
                 }}
@@ -295,9 +295,9 @@ export default function DashboardPage() {
                 onClick={() => setSelectedWg('personal')}
                 style={{
                   height: 36, padding: '0 14px', borderRadius: 18,
-                  border: selectedWg === 'personal' ? '1.5px solid #6366f1' : '1.5px solid var(--color-border)',
-                  background: selectedWg === 'personal' ? 'rgba(99,102,241,0.15)' : 'var(--color-surface-2)',
-                  color: selectedWg === 'personal' ? '#a5b4fc' : 'var(--color-text-muted)',
+                  border: selectedWg === 'personal' ? '1.5px solid var(--color-primary)' : '1.5px solid var(--color-border)',
+                  background: selectedWg === 'personal' ? 'var(--color-primary-dim)' : 'var(--color-surface-2)',
+                  color: selectedWg === 'personal' ? 'var(--color-text)' : 'var(--color-text-muted)',
                   fontSize: 13, fontWeight: selectedWg === 'personal' ? 600 : 500,
                   cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-sans)',
                 }}
@@ -343,7 +343,7 @@ export default function DashboardPage() {
 
             {showPlanForm && (
               <form onSubmit={handleCreatePlan} className="card mb-4"
-                style={{ border: '1px solid rgba(99,102,241,0.4)' }}>
+                style={{ border: '1px solid var(--color-border-light)' }}>
                 <div className="card-top-bar" />
                 <div className="card-body flex flex-col gap-3">
                   <p className="m-0 text-[13px]" style={{ color: 'var(--color-text-muted)' }}>
