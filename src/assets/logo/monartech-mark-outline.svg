@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#a78bfa"/>
+    </linearGradient>
+  </defs>
+
+  <!-- M -->
+  <path
+    d="M8,40 L8,18 L24,30 L40,18 L40,40"
+    stroke="url(#g)" stroke-width="5"
+    stroke-linecap="round" stroke-linejoin="round"
+    fill="none"
+  />
+
+  <!-- Left prong -->
+  <line x1="8"  y1="18" x2="8"  y2="9"  stroke="url(#g)" stroke-width="2.3" stroke-linecap="round"/>
+  <circle cx="8"  cy="6.5" r="3" stroke="url(#g)" stroke-width="2" fill="none"/>
+  <circle cx="8"  cy="6.5" r="1" fill="#6366f1"/>
+
+  <!-- Center prong -->
+  <line x1="24" y1="30" x2="24" y2="6"  stroke="url(#g)" stroke-width="2.3" stroke-linecap="round"/>
+  <circle cx="24" cy="3.5" r="3" stroke="url(#g)" stroke-width="2" fill="none"/>
+  <circle cx="24" cy="3.5" r="1" fill="#8b79f8"/>
+
+  <!-- Right prong -->
+  <line x1="40" y1="18" x2="40" y2="9"  stroke="url(#g)" stroke-width="2.3" stroke-linecap="round"/>
+  <circle cx="40" cy="6.5" r="3" stroke="url(#g)" stroke-width="2" fill="none"/>
+  <circle cx="40" cy="6.5" r="1" fill="#a78bfa"/>
+</svg>

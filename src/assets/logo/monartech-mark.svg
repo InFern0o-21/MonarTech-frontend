@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="grad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#a78bfa"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="48" height="48" rx="11" fill="url(#grad)"/>
+
+  <!--
+    Proper M letterform (stroke-based):
+    - Two vertical legs on left (8) and right (40)
+    - Both go from bottom (40) up to top (18)
+    - From top-left (8,18), diagonal DOWN to center (24,30)
+    - From center (24,30), diagonal UP to top-right (40,18)
+    This makes the classic M shape with the center V dip
+  -->
+  <path
+    d="M8,40 L8,18 L24,30 L40,18 L40,40"
+    stroke="white"
+    stroke-width="5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+
+  <!--
+    Crown prongs rise from the THREE top points of the M:
+    - Top-left:  (8, 18)
+    - Center-top: visually between the two peaks — but M only has 2 peaks.
+      For a 3-prong crown feel, add a center prong from (24, 30) going up
+      but make it shorter so it reads as the crown center
+    - Top-right: (40, 18)
+
+    Actually for a cleaner crown: 3 prongs from left-top, center (above the valley), right-top
+    The "center" prong starts from 24,30 (valley) and goes way up — this is the tallest prong
+  -->
+
+  <!-- Left prong from top-left of M -->
+  <line x1="8"  y1="18" x2="8"  y2="9"  stroke="white" stroke-width="2.3" stroke-linecap="round"/>
+  <circle cx="8"  cy="6.5" r="3" stroke="white" stroke-width="2" fill="none"/>
+  <circle cx="8"  cy="6.5" r="1" fill="white"/>
+
+  <!-- Center prong — tallest — rises from the M valley upward (the crown's center spike) -->
+  <line x1="24" y1="30" x2="24" y2="6"  stroke="white" stroke-width="2.3" stroke-linecap="round"/>
+  <circle cx="24" cy="3.5" r="3" stroke="white" stroke-width="2" fill="none"/>
+  <circle cx="24" cy="3.5" r="1" fill="white"/>
+
+  <!-- Right prong from top-right of M -->
+  <line x1="40" y1="18" x2="40" y2="9"  stroke="white" stroke-width="2.3" stroke-linecap="round"/>
+  <circle cx="40" cy="6.5" r="3" stroke="white" stroke-width="2" fill="none"/>
+  <circle cx="40" cy="6.5" r="1" fill="white"/>
+
+</svg>
