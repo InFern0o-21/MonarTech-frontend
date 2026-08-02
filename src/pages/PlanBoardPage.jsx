@@ -413,17 +413,17 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
         style={{
           position:'fixed', zIndex:51,
           fontFamily:'var(--font-sans)',
-          background: 'var(--color-surface)',
-          borderTop: '1px solid var(--color-border-light)',
-          borderLeft: '1px solid var(--color-border)',
-          borderRight: '1px solid var(--color-border)',
+          background: 'linear-gradient(180deg, rgba(25,14,36,0.98) 0%, rgba(13,6,20,1) 100%)',
+          borderTop: '1px solid rgba(223,207,190,0.25)',
+          borderLeft: '1px solid rgba(223,207,190,0.12)',
+          borderRight: '1px solid rgba(223,207,190,0.12)',
           display:'flex', flexDirection:'column',
 
           /* ── mobile: bottom sheet ── */
           bottom:0, left:0, right:0,
           maxHeight:'92dvh',
           borderRadius:'20px 20px 0 0',
-          boxShadow:'0 -8px 60px rgba(0,0,0,0.8)',
+          boxShadow:'0 -8px 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(223,207,190,0.08)',
           transition:'transform 0.28s cubic-bezier(0.32,0.72,0,1)',
           transform: visible ? 'translateY(0)' : 'translateY(100%)',
         }}
@@ -637,7 +637,8 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
           <div style={{
             flexShrink:0, padding:'12px 16px',
             borderTop:`1px solid rgba(251,146,60,0.3)`,
-            background:'rgba(251,146,60,0.08)',
+            background:'rgba(251,146,60,0.06)',
+            borderRadius:'0 0 18px 18px',
             display:'flex', alignItems:'center', justifyContent:'space-between', gap:12,
           }}>
             <span style={{ fontSize:13, color:'#fb923c' }}>You have unsaved changes.</span>
@@ -659,8 +660,9 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
         {canEdit && isDirty && !discardWarning && (
           <div style={{
             flexShrink:0, padding:'10px 16px',
-            borderTop:`1px solid ${P.border}`,
-            background:'var(--color-surface)',
+            borderTop:`1px solid rgba(223,207,190,0.12)`,
+            background:'rgba(13,6,20,0.98)',
+            borderRadius:'0 0 18px 18px',
             display:'flex', alignItems:'center', justifyContent:'space-between', gap:12,
           }}>
             <span style={{ fontSize:12, color:P.muted }}>Unsaved changes</span>
@@ -700,11 +702,11 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
             max-width: 580px !important;
             max-height: 88vh !important;
             border-radius: 18px !important;
-            border: 1px solid var(--color-border-light) !important;
+            border: 1px solid rgba(223,207,190,0.20) !important;
             transform: ${visible ? 'translate(-50%, -50%) scale(1)' : 'translate(-50%, -50%) scale(0.96)'} !important;
             transition: opacity 0.25s ease, transform 0.25s ease !important;
             opacity: ${visible ? 1 : 0} !important;
-            box-shadow: 0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px var(--color-border) !important;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.85), inset 0 1px 0 rgba(223,207,190,0.08) !important;
           }
         }
         @keyframes saving-pulse {
