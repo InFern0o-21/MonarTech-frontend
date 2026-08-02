@@ -144,7 +144,7 @@ function AssigneesSection({ task, planId, planWorkgroup, canEdit, currentUserId,
 }
 
 // ─── AttachmentsSection ───────────────────────────────────────────────────────
-function AttachmentsSection({ taskId, canEdit }) {
+function AttachmentsSection({ taskId, canUpload, canDelete }) {
   const [attachments, setAttachments] = useState([])
   const [uploading,   setUploading]   = useState(false)
   const fileRef = React.useRef(null)
@@ -189,7 +189,7 @@ function AttachmentsSection({ taskId, canEdit }) {
     <div>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
         <label className="panel-label" style={{ marginBottom:0 }}>📎 Attachments {attachments.length>0&&`(${attachments.length})`}</label>
-        {canEdit && (
+        {canUpload && (
           <>
             <button type="button" onClick={()=>fileRef.current?.click()} disabled={uploading}
               className="btn-action-sm" style={{ opacity:uploading?0.6:1 }}>
@@ -210,7 +210,7 @@ function AttachmentsSection({ taskId, canEdit }) {
                   <p style={{ margin:0, fontSize:11, color:P.muted }}>{humanSize(a.size)}</p>
                 </div>
                 <a href={a.url} target="_blank" rel="noreferrer" style={{ color:P.muted, fontSize:16, textDecoration:'none', flexShrink:0 }} title="Open">↗</a>
-                {canEdit && (
+                {canDelete && (
                   <button onClick={()=>handleDelete(a.id)} style={{ background:'none', border:'none', cursor:'pointer', color:P.muted, fontSize:14, padding:2, flexShrink:0 }}
                     onMouseEnter={e=>e.currentTarget.style.color='#f87171'} onMouseLeave={e=>e.currentTarget.style.color=P.muted}>×</button>
                 )}
@@ -307,7 +307,7 @@ function ChecklistSection({ taskId, canEdit }) {
 // ─── TaskDetailModal ──────────────────────────────────────────────────────────
 // On mobile  → slides up from the bottom as a bottom sheet (max 92vh, drag handle)
 // On desktop → centered modal, max 600px wide
-function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemoveAssignee, onAddAssignee, currentUserId }) {
+function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemoveAssignee, onAddAssignee, currentUserId, userPlanRole }) {
   const [saving,    setSaving]    = useState(false)
   const [mounted,   setMounted]   = useState(false)
   const [visible,   setVisible]   = useState(false)
@@ -334,6 +334,13 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
 
   const canEdit   = editLevel === 'full'
   const canStatus = editLevel !== 'read-only'
+
+  // Attachment permissions — separate from general task editing
+  // Anyone on the plan (including assignees) can upload
+  const canUploadAttachment = editLevel !== 'read-only'
+  // Only plan owner, task creator, or workgroup owner/admin can delete
+  const isPrivileged = canEdit || userPlanRole === 'owner' || userPlanRole === 'admin'
+  const canDeleteAttachment = isPrivileged
 
   async function handleSave(patch) {
     setSaving(true)
@@ -574,7 +581,7 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
 
           {/* Attachments */}
           <div style={{ marginBottom:16 }}>
-            <AttachmentsSection taskId={task.id} canEdit={canEdit} />
+            <AttachmentsSection taskId={task.id} canUpload={canUploadAttachment} canDelete={canDeleteAttachment} />
           </div>
 
           {/* Meta */}
@@ -967,6 +974,7 @@ export default function PlanBoardPage() {
           statuses={statuses}
           editLevel={editLevel}
           currentUserId={user?.id}
+          userPlanRole={userPlanRole}
           onUpdate={async (id, patch) => { const updated = await updateTask(id, patch); handleTaskUpdated(updated) }}
           onAddAssignee={addAssignee}
           onRemoveAssignee={removeAssignee}
