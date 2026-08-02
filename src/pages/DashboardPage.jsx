@@ -204,7 +204,7 @@ export default function DashboardPage() {
     setPlanSaving(true)
     try {
       const payload = { title: planTitle.trim(), description: planDesc.trim() || undefined }
-      if (selectedWg) payload.workgroup = selectedWg
+      if (selectedWg && selectedWg !== 'personal') payload.workgroup = selectedWg
       const { data } = await apiClient.post('/api/plans/', payload)
       addToast('success', 'Plan created')
       setPlans(prev => [...prev, data])
