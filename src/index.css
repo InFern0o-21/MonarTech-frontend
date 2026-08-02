@@ -631,3 +631,11 @@ body {
   border-color: #6366f1;
   color: #a5b4fc;
 }
+
+/* ── Dropdown menu — Imperial theme overrides ── */
+/* Targets shadcn DropdownMenuItem hover state */
+:root:not(.theme-modern) [data-radix-popper-content-wrapper] [role="menuitem"]:hover,
+:root:not(.theme-modern) [data-radix-popper-content-wrapper] [role="menuitem"]:focus {
+  background: rgba(223,207,190,0.08) !important;
+  color: #dfcfbe !important;
+}

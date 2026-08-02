@@ -79,20 +79,37 @@ export default function TopHeader({ onMenuClick }) {
               className="w-9 h-9 rounded-full text-[13px] font-bold cursor-pointer
                          flex items-center justify-center transition-opacity hover:opacity-80"
               style={{
-                background: 'var(--color-primary-dim)',
-                border: '2px solid var(--color-primary)',
-                color: 'var(--color-primary)',
+                background: isModern ? 'var(--color-primary-dim)' : 'rgba(223,207,190,0.1)',
+                border: isModern ? '2px solid var(--color-primary)' : '2px solid #c2ab91',
+                color: isModern ? 'var(--color-primary)' : '#dfcfbe',
                 fontFamily: 'var(--font-sans)',
               }}
             >
               {getInitials(user)}
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => navigate('/profile')}>
+          <DropdownMenuContent
+            align="end"
+            style={{
+              background: isModern ? '#111118' : '#160a21',
+              border: isModern ? '1px solid #2a2a38' : '1px solid rgba(223,207,190,0.15)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+              borderRadius: isModern ? 10 : 6,
+              minWidth: 160,
+              padding: '4px',
+            }}
+          >
+            <DropdownMenuItem
+              onClick={() => navigate('/profile')}
+              style={{ borderRadius: isModern ? 6 : 4, cursor: 'pointer' }}
+            >
               Profile
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={logout} className="text-red-400">
+            <DropdownMenuItem
+              onClick={logout}
+              className="text-red-400"
+              style={{ borderRadius: isModern ? 6 : 4, cursor: 'pointer' }}
+            >
               Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>
