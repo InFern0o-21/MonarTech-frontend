@@ -160,7 +160,7 @@ function BinaryRain({ theme }) {
       ? ['#dfcfbe', '#c2ab91', 'rgba(223,207,190,0.5)']
       : ['#6366f1', '#a78bfa', '#818cf8']
     const CHARS = ['0', '1']
-    const COUNT = 80
+    const COUNT = 40
     const digits = []
     function rand(min, max) { return Math.random() * (max - min) + min }
     for (let i = 0; i < COUNT; i++) {
