@@ -312,6 +312,24 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
   const [mounted,   setMounted]   = useState(false)
   const [visible,   setVisible]   = useState(false)
 
+  // ── Draft state — nothing hits the API until Save is clicked ──
+  const [draft, setDraft] = useState({
+    title:       task.title       ?? '',
+    description: task.description ?? '',
+    priority:    task.priority    ?? 'MEDIUM',
+    due_date:    task.due_date ? task.due_date.split('T')[0] : '',
+  })
+  const [discardWarning, setDiscardWarning] = useState(false)
+
+  const isDirty = (
+    draft.title       !== (task.title       ?? '')       ||
+    draft.description !== (task.description ?? '')       ||
+    draft.priority    !== (task.priority    ?? 'MEDIUM') ||
+    draft.due_date    !== (task.due_date ? task.due_date.split('T')[0] : '')
+  )
+
+  function setField(key) { return val => setDraft(d => ({ ...d, [key]: val })) }
+
   // animate in
   useEffect(() => {
     setMounted(true)
@@ -319,32 +337,49 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
   }, [])
 
   function handleClose() {
+    if (isDirty) { setDiscardWarning(true); return }
+    doClose()
+  }
+  function doClose() {
     setVisible(false)
     setTimeout(() => { setMounted(false); onClose() }, 280)
   }
 
-  // close on Escape
+  // Escape key — warn if dirty
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') handleClose() }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [isDirty])
 
   if (!mounted) return null
 
   const canEdit   = editLevel === 'full'
   const canStatus = editLevel !== 'read-only'
 
-  // Attachment permissions — separate from general task editing
-  // Anyone on the plan (including assignees) can upload
   const canUploadAttachment = editLevel !== 'read-only'
-  // Only plan owner, task creator, or workgroup owner/admin can delete
   const isPrivileged = canEdit || userPlanRole === 'owner' || userPlanRole === 'admin'
   const canDeleteAttachment = isPrivileged
 
-  async function handleSave(patch) {
+  // Status changes remain instant — no draft needed
+  async function handleStatusChange(statusId) {
     setSaving(true)
-    try { await onUpdate(task.id, patch) } finally { setSaving(false) }
+    try { await onUpdate(task.id, { status: statusId }) } finally { setSaving(false) }
+  }
+
+  // Explicit save of draft fields
+  async function handleSaveDraft() {
+    if (!draft.title.trim()) return
+    setSaving(true)
+    try {
+      await onUpdate(task.id, {
+        title:       draft.title.trim(),
+        description: draft.description,
+        priority:    draft.priority,
+        due_date:    draft.due_date || null,
+      })
+      setDiscardWarning(false)
+    } finally { setSaving(false) }
   }
 
   const priorityMeta = {
@@ -406,9 +441,8 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
           <div style={{ flex:1, minWidth:0 }}>
             {canEdit
               ? <input
-                  key={task.id}
-                  defaultValue={task.title}
-                  onBlur={e => { if (e.target.value.trim() && e.target.value !== task.title) handleSave({ title: e.target.value.trim() }) }}
+                  value={draft.title}
+                  onChange={e => setField('title')(e.target.value)}
                   placeholder="Task title"
                   style={{
                     width:'100%', background:'transparent', border:'none', outline:'none',
@@ -427,7 +461,7 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
                     <button
                       key={s.id}
                       type="button"
-                      onClick={() => { if (!active) handleSave({ status: s.id }) }}
+                      onClick={() => { if (!active) handleStatusChange(s.id) }}
                       style={{
                         height:28, padding:'0 10px', borderRadius:14,
                         border: active ? `1.5px solid ${s.color || P.accent}` : `1.5px solid rgba(255,255,255,0.1)`,
@@ -492,8 +526,8 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
               <label style={{ display:'block', fontSize:11, fontWeight:600, color:P.muted, textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:6 }}>Priority</label>
               {canEdit ? (
                 <select
-                  defaultValue={task.priority}
-                  onChange={e => handleSave({ priority: e.target.value })}
+                  value={draft.priority}
+                  onChange={e => setField('priority')(e.target.value)}
                   style={{ ...nativeSelectStyle, height:40, fontSize:13 }}
                 >
                   {PRIORITY_OPTIONS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
@@ -514,8 +548,8 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
               <label style={{ display:'block', fontSize:11, fontWeight:600, color:P.muted, textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:6 }}>Due date</label>
               {canEdit ? (
                 <DatePicker
-                  value={task.due_date ? task.due_date.split('T')[0] : ''}
-                  onChange={val => handleSave({ due_date: val || null })}
+                  value={draft.due_date}
+                  onChange={val => setField('due_date')(val)}
                   placeholder="Pick a date"
                 />
               ) : task.due_date ? (
@@ -531,9 +565,8 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
             <label style={{ display:'block', fontSize:11, fontWeight:600, color:P.muted, textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:6 }}>Description</label>
             {canEdit ? (
               <textarea
-                key={task.id}
-                defaultValue={task.description ?? ''}
-                onBlur={e => { if (e.target.value !== (task.description ?? '')) handleSave({ description: e.target.value }) }}
+                value={draft.description}
+                onChange={e => setField('description')(e.target.value)}
                 placeholder="Add a description…"
                 rows={3}
                 style={{
@@ -541,8 +574,7 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
                   background:'rgba(255,255,255,0.04)', border:`1.5px solid ${P.border}`,
                   borderRadius:10, padding:'10px 12px', color:'#fff',
                   fontSize:14, fontFamily:'var(--font-sans)', lineHeight:1.55,
-                  resize:'vertical', outline:'none',
-                  minHeight:80,
+                  resize:'vertical', outline:'none', minHeight:80,
                 }}
               />
             ) : task.description ? (
@@ -591,7 +623,53 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
           </div>
         </div>
 
-        {/* Saving overlay indicator */}
+        {/* ── Discard warning — shown when closing with unsaved changes ── */}
+        {discardWarning && (
+          <div style={{
+            flexShrink:0, padding:'12px 16px',
+            borderTop:`1px solid rgba(251,146,60,0.3)`,
+            background:'rgba(251,146,60,0.08)',
+            display:'flex', alignItems:'center', justifyContent:'space-between', gap:12,
+          }}>
+            <span style={{ fontSize:13, color:'#fb923c' }}>You have unsaved changes.</span>
+            <div style={{ display:'flex', gap:8 }}>
+              <button onClick={() => { setDiscardWarning(false); doClose() }}
+                style={{ height:32, padding:'0 14px', borderRadius:6, border:'1px solid rgba(251,146,60,0.4)',
+                  background:'transparent', color:'#fb923c', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'var(--font-sans)' }}>
+                Discard
+              </button>
+              <button onClick={async () => { await handleSaveDraft(); doClose() }}
+                className="btn btn-primary btn-sm">
+                Save & close
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Sticky save footer — only visible when there are unsaved changes ── */}
+        {canEdit && isDirty && !discardWarning && (
+          <div style={{
+            flexShrink:0, padding:'10px 16px',
+            borderTop:`1px solid ${P.border}`,
+            background:'var(--color-surface)',
+            display:'flex', alignItems:'center', justifyContent:'space-between', gap:12,
+          }}>
+            <span style={{ fontSize:12, color:P.muted }}>Unsaved changes</span>
+            <div style={{ display:'flex', gap:8 }}>
+              <button
+                onClick={() => setDraft({ title: task.title ?? '', description: task.description ?? '', priority: task.priority ?? 'MEDIUM', due_date: task.due_date ? task.due_date.split('T')[0] : '' })}
+                className="btn btn-ghost btn-sm">
+                Discard
+              </button>
+              <button onClick={handleSaveDraft} disabled={saving || !draft.title.trim()}
+                className="btn btn-primary btn-sm" style={{ opacity: saving ? 0.7 : 1 }}>
+                {saving ? 'Saving…' : 'Save changes'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Saving progress bar */}
         {saving && (
           <div style={{
             position:'absolute', top:0, left:0, right:0, height:2,
