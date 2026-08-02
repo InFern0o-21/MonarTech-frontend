@@ -413,14 +413,17 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
         style={{
           position:'fixed', zIndex:51,
           fontFamily:'var(--font-sans)',
-          background: 'var(--gradient-card)',
+          background: 'var(--color-surface)',
+          borderTop: '1px solid var(--color-border-light)',
+          borderLeft: '1px solid var(--color-border)',
+          borderRight: '1px solid var(--color-border)',
           display:'flex', flexDirection:'column',
 
           /* ── mobile: bottom sheet ── */
           bottom:0, left:0, right:0,
           maxHeight:'92dvh',
           borderRadius:'20px 20px 0 0',
-          boxShadow:'0 -8px 40px rgba(0,0,0,0.6)',
+          boxShadow:'0 -8px 60px rgba(0,0,0,0.8)',
           transition:'transform 0.28s cubic-bezier(0.32,0.72,0,1)',
           transform: visible ? 'translateY(0)' : 'translateY(100%)',
         }}
@@ -430,6 +433,12 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
         <div style={{ display:'flex', justifyContent:'center', paddingTop:10, paddingBottom:4, flexShrink:0 }}>
           <div style={{ width:36, height:4, borderRadius:2, background:'rgba(255,255,255,0.15)' }} />
         </div>
+
+        {/* Imperial accent line */}
+        <div style={{
+          height:1, flexShrink:0,
+          background:'linear-gradient(90deg, transparent, var(--color-border-light), transparent)',
+        }} />
 
         {/* Header — sticky */}
         <div style={{
@@ -691,10 +700,11 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
             max-width: 580px !important;
             max-height: 88vh !important;
             border-radius: 18px !important;
+            border: 1px solid var(--color-border-light) !important;
             transform: ${visible ? 'translate(-50%, -50%) scale(1)' : 'translate(-50%, -50%) scale(0.96)'} !important;
             transition: opacity 0.25s ease, transform 0.25s ease !important;
             opacity: ${visible ? 1 : 0} !important;
-            box-shadow: 0 24px 80px rgba(0,0,0,0.7) !important;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px var(--color-border) !important;
           }
         }
         @keyframes saving-pulse {
