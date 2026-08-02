@@ -2,33 +2,70 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useToast } from '../hooks/useToast'
+import { useTheme } from '../contexts/ThemeContext'
 import logoMark from '../assets/logo/monartech-mark.svg'
 import apiClient from '../lib/apiClient'
 
-// Hardcoded panel colors — no CSS variables to avoid inheritance issues
-const P = {
-  bg:          '#160a21',
-  bgInput:     'rgba(26,15,36,0.4)',
-  bgInputHover:'rgba(38,21,54,0.6)',
-  border:      'rgba(223,207,190,0.20)',
-  borderFocus: '#dfcfbe',
-  accent:      '#6366f1',
-  accentHover: '#7c7ff5',
-  text:        '#ffffff',
-  textSub:     'rgba(255,255,255,0.60)',
-  textMuted:   'rgba(255,255,255,0.35)',
-  error:       '#f87171',
-  errorBg:     'rgba(248,113,113,0.10)',
-  errorBorder: 'rgba(248,113,113,0.25)',
-  success:     '#4ade80',
-  successBg:   'rgba(74,222,128,0.10)',
+// Theme-aware panel palettes
+const PANEL_IMPERIAL = {
+  bg:           '#160a21',
+  bgInput:      'rgba(26,15,36,0.4)',
+  bgInputHover: 'rgba(38,21,54,0.6)',
+  border:       'rgba(223,207,190,0.20)',
+  borderFocus:  '#dfcfbe',
+  topBar:       'linear-gradient(90deg, transparent, rgba(223,207,190,0.4), transparent)',
+  accent:       '#dfcfbe',          /* gold — links, labels */
+  accentHover:  '#ffffff',
+  btnBg:        'linear-gradient(180deg, #321c40 0%, #170b21 100%)',
+  btnBgHov:     'linear-gradient(180deg, #422654 0%, #21102e 100%)',
+  btnBorder:    '#c2ab91',
+  btnBorderHov: '#dfcfbe',
+  btnColor:     '#dfcfbe',
+  text:         '#ffffff',
+  textSub:      'rgba(255,255,255,0.60)',
+  textMuted:    'rgba(255,255,255,0.35)',
+  error:        '#f87171',
+  errorBg:      'rgba(248,113,113,0.10)',
+  errorBorder:  'rgba(248,113,113,0.25)',
+  success:      '#4ade80',
+  successBg:    'rgba(74,222,128,0.10)',
   successBorder:'rgba(74,222,128,0.25)',
+  focusRing:    'rgba(223,207,190,0.15)',
+}
+
+const PANEL_MODERN = {
+  bg:           '#111118',
+  bgInput:      '#1a1a24',
+  bgInputHover: 'rgba(99,102,241,0.05)',
+  border:       '#2a2a38',
+  borderFocus:  '#6366f1',
+  topBar:       'linear-gradient(90deg, #6366f1, #a78bfa)',
+  accent:       '#6366f1',
+  accentHover:  '#7c7ff5',
+  btnBg:        '#6366f1',
+  btnBgHov:     '#7c7ff5',
+  btnBorder:    'transparent',
+  btnBorderHov: 'transparent',
+  btnColor:     '#ffffff',
+  text:         '#f0f0f8',
+  textSub:      '#8b8ba8',
+  textMuted:    '#5a5a70',
+  error:        '#f87171',
+  errorBg:      'rgba(248,113,113,0.10)',
+  errorBorder:  'rgba(248,113,113,0.25)',
+  success:      '#4ade80',
+  successBg:    'rgba(74,222,128,0.10)',
+  successBorder:'rgba(74,222,128,0.25)',
+  focusRing:    'rgba(99,102,241,0.18)',
 }
 
 export default function LoginPanel({ isOpen, onClose, onSuccess, initialMode = 'login' }) {
-  const [mode, setMode]         = useState(initialMode)
-  const [visible, setVisible]   = useState(false)
+  const [mode, setMode]           = useState(initialMode)
+  const [visible, setVisible]     = useState(false)
   const [animating, setAnimating] = useState(false)
+  const { theme } = useTheme()
+  const P = theme === 'modern' ? PANEL_MODERN : PANEL_IMPERIAL
+  const isImperial = theme === 'imperial'
 
   useEffect(() => {
     if (isOpen) {
@@ -86,7 +123,7 @@ export default function LoginPanel({ isOpen, onClose, onSuccess, initialMode = '
         }}
       >
         {/* Top gradient line */}
-        <div style={{ height: 3, background: 'linear-gradient(90deg, #6366f1, #a78bfa)' }} />
+        <div style={{ height: isImperial ? 1 : 3, background: P.topBar }} />
 
         {/* Header */}
         <div style={{
@@ -117,9 +154,9 @@ export default function LoginPanel({ isOpen, onClose, onSuccess, initialMode = '
 
         {/* Scrollable content */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '32px 24px' }}>
-          {mode === 'login'    && <LoginForm    onSwitch={setMode} onSuccess={onSuccess} />}
-          {mode === 'register' && <RegisterForm onSwitch={setMode} />}
-          {mode === 'forgot'   && <ForgotForm   onSwitch={setMode} />}
+          {mode === 'login'    && <LoginForm    P={P} isImperial={isImperial} onSwitch={setMode} onSuccess={onSuccess} />}
+          {mode === 'register' && <RegisterForm P={P} isImperial={isImperial} onSwitch={setMode} />}
+          {mode === 'forgot'   && <ForgotForm   P={P} isImperial={isImperial} onSwitch={setMode} />}
         </div>
       </div>
     </>
@@ -127,7 +164,7 @@ export default function LoginPanel({ isOpen, onClose, onSuccess, initialMode = '
 }
 
 /* ─── Login Form ─────────────────────────────────────────── */
-function LoginForm({ onSwitch, onSuccess }) {
+function LoginForm({ P, isImperial, onSwitch, onSuccess }) {
   const { login } = useAuth()
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
@@ -179,30 +216,30 @@ function LoginForm({ onSwitch, onSuccess }) {
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <Field label="Email" type="email" value={email} onChange={setEmail} placeholder="you@example.com" required />
-        <Field label="Password" type="password" value={password} onChange={setPassword} placeholder="••••••••" required />
+        <Field P={P} label="Email" type="email" value={email} onChange={setEmail} placeholder="you@example.com" required />
+        <Field P={P} label="Password" type="password" value={password} onChange={setPassword} placeholder="••••••••" required />
 
-        {error && <ErrorBox>{error}</ErrorBox>}
+        {error && <ErrorBox P={P}>{error}</ErrorBox>}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <LinkBtn onClick={() => onSwitch('forgot')}>Forgot password?</LinkBtn>
+          <LinkBtn P={P} onClick={() => onSwitch('forgot')}>Forgot password?</LinkBtn>
         </div>
 
-        <SubmitBtn loading={loading}>Sign in</SubmitBtn>
+        <SubmitBtn P={P} isImperial={isImperial} loading={loading}>Sign in</SubmitBtn>
       </form>
 
-      <Rule />
+      <Rule P={P} />
 
       <p style={{ margin: 0, fontSize: 14, color: P.textSub, textAlign: 'center' }}>
         Don't have an account?{' '}
-        <LinkBtn onClick={() => onSwitch('register')}>Create one</LinkBtn>
+        <LinkBtn P={P} onClick={() => onSwitch('register')}>Create one</LinkBtn>
       </p>
     </div>
   )
 }
 
 /* ─── Register Form ──────────────────────────────────────── */
-function RegisterForm({ onSwitch }) {
+function RegisterForm({ P, isImperial, onSwitch }) {
   const [f, setF]           = useState({ email: '', username: '', password1: '', password2: '' })
   const [fieldErrors, setFieldErrors] = useState({})
   const [formError, setFormError]     = useState('')
@@ -284,28 +321,28 @@ function RegisterForm({ onSwitch }) {
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <Field label="Email"            type="email"    value={f.email}     onChange={set('email')}     placeholder="you@example.com"  required error={fieldErrors.email} />
-        <Field label="Username"         type="text"     value={f.username}  onChange={set('username')}  placeholder="johndoe"           required error={fieldErrors.username} />
-        <Field label="Password"         type="password" value={f.password1} onChange={set('password1')} placeholder="Min. 8 characters" required error={fieldErrors.password1} />
-        <Field label="Confirm Password" type="password" value={f.password2} onChange={set('password2')} placeholder="••••••••"           required error={fieldErrors.password2} />
+        <Field P={P} label="Email"            type="email"    value={f.email}     onChange={set('email')}     placeholder="you@example.com"  required error={fieldErrors.email} />
+        <Field P={P} label="Username"         type="text"     value={f.username}  onChange={set('username')}  placeholder="johndoe"           required error={fieldErrors.username} />
+        <Field P={P} label="Password"         type="password" value={f.password1} onChange={set('password1')} placeholder="Min. 8 characters" required error={fieldErrors.password1} />
+        <Field P={P} label="Confirm Password" type="password" value={f.password2} onChange={set('password2')} placeholder="••••••••"           required error={fieldErrors.password2} />
 
-        {formError && <ErrorBox>{formError}</ErrorBox>}
+        {formError && <ErrorBox P={P}>{formError}</ErrorBox>}
 
-        <SubmitBtn loading={loading} style={{ marginTop: 4 }}>Create account</SubmitBtn>
+        <SubmitBtn P={P} isImperial={isImperial} loading={loading} style={{ marginTop: 4 }}>Create account</SubmitBtn>
       </form>
 
-      <Rule />
+      <Rule P={P} />
 
       <p style={{ margin: 0, fontSize: 14, color: P.textSub, textAlign: 'center' }}>
         Already have an account?{' '}
-        <LinkBtn onClick={() => onSwitch('login')}>Sign in</LinkBtn>
+        <LinkBtn P={P} onClick={() => onSwitch('login')}>Sign in</LinkBtn>
       </p>
     </div>
   )
 }
 
 /* ─── Forgot Form ────────────────────────────────────────── */
-function ForgotForm({ onSwitch }) {
+function ForgotForm({ P, isImperial, onSwitch }) {
   const [email, setEmail]     = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent]       = useState(false)
@@ -353,23 +390,22 @@ function ForgotForm({ onSwitch }) {
         </div>
       ) : (
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Field label="Email" type="email" value={email} onChange={setEmail} placeholder="you@example.com" required />
-          {error && <ErrorBox>{error}</ErrorBox>}
-          <SubmitBtn loading={loading}>Send reset link</SubmitBtn>
+          <Field P={P} label="Email" type="email" value={email} onChange={setEmail} placeholder="you@example.com" required />
+          {error && <ErrorBox P={P}>{error}</ErrorBox>}
+          <SubmitBtn P={P} isImperial={isImperial} loading={loading}>Send reset link</SubmitBtn>
         </form>
       )}
 
       <p style={{ margin: 0, fontSize: 14, color: P.textSub, textAlign: 'center' }}>
-        <LinkBtn onClick={() => onSwitch('login')}>← Back to sign in</LinkBtn>
+        <LinkBtn P={P} onClick={() => onSwitch('login')}>← Back to sign in</LinkBtn>
       </p>
     </div>
   )
 }
 
 /* ─── Shared primitives ──────────────────────────────────── */
-function Field({ label, type, value, onChange, placeholder, required, error }) {
+function Field({ P, label, type, value, onChange, placeholder, required, error }) {
   const [focused, setFocused] = useState(false)
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       <label style={{ fontSize: 13, fontWeight: 500, color: P.textSub }}>
@@ -377,52 +413,51 @@ function Field({ label, type, value, onChange, placeholder, required, error }) {
         {required && <span style={{ color: P.accent, marginLeft: 2 }}>*</span>}
       </label>
       <input
-        type={type}
-        value={value}
+        type={type} value={value}
         onChange={e => onChange(e.target.value)}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        placeholder={placeholder}
-        required={required}
-        disabled={false}
+        placeholder={placeholder} required={required} disabled={false}
         style={{
-          height: 44,
-          padding: '0 14px',
-          borderRadius: 10,
+          height: 44, padding: '0 14px', borderRadius: 10,
           border: `1.5px solid ${error ? P.error : focused ? P.borderFocus : P.border}`,
           background: focused ? P.bgInputHover : P.bgInput,
-          color: P.text,
-          fontSize: 14,
-          outline: 'none',
-          width: '100%',
-          boxSizing: 'border-box',
+          color: P.text, fontSize: 14, outline: 'none',
+          width: '100%', boxSizing: 'border-box',
           transition: 'border-color 0.15s, background 0.15s, box-shadow 0.15s',
-          boxShadow: focused ? `0 0 0 3px rgba(99,102,241,0.18)` : 'none',
+          boxShadow: focused ? `0 0 0 3px ${P.focusRing}` : 'none',
           fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
         }}
       />
-      {error && (
-        <span style={{ fontSize: 12, color: P.error }}>{error}</span>
-      )}
+      {error && <span style={{ fontSize: 12, color: P.error }}>{error}</span>}
     </div>
   )
 }
 
-function SubmitBtn({ children, loading, style: extra }) {
+function SubmitBtn({ P, isImperial, children, loading, style: extra }) {
   const [hov, setHov] = useState(false)
   return (
     <button
-      type="submit"
-      disabled={loading}
+      type="submit" disabled={loading}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        height: 44, borderRadius: 10, border: 'none',
-        background: hov && !loading ? P.accentHover : P.accent,
-        color: '#fff', fontSize: 14, fontWeight: 600,
+        height: 44, borderRadius: isImperial ? 4 : 10,
+        border: isImperial ? `1px solid ${hov ? P.btnBorderHov : P.btnBorder}` : 'none',
+        background: isImperial
+          ? (hov && !loading ? P.btnBgHov : P.btnBg)
+          : (hov && !loading ? P.accentHover : P.accent),
+        color: isImperial ? P.btnColor : '#fff',
+        fontSize: isImperial ? 12 : 14,
+        fontWeight: 600,
+        letterSpacing: isImperial ? '1.5px' : '0',
+        textTransform: isImperial ? 'uppercase' : 'none',
         cursor: loading ? 'not-allowed' : 'pointer',
         opacity: loading ? 0.75 : 1,
-        transition: 'all 0.15s',
+        transition: 'all 0.2s',
+        boxShadow: isImperial
+          ? (hov ? 'inset 0 0 20px rgba(223,207,190,0.15)' : 'inset 0 1px 0 rgba(255,255,255,0.08)')
+          : 'none',
         fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
         ...extra,
@@ -445,7 +480,7 @@ function Spinner() {
   )
 }
 
-function ErrorBox({ children }) {
+function ErrorBox({ P, children }) {
   return (
     <div style={{
       padding: '10px 14px', borderRadius: 8,
@@ -455,7 +490,7 @@ function ErrorBox({ children }) {
   )
 }
 
-function Rule() {
+function Rule({ P }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
       <div style={{ flex: 1, height: 1, background: P.border }} />
@@ -465,7 +500,7 @@ function Rule() {
   )
 }
 
-function LinkBtn({ onClick, children }) {
+function LinkBtn({ P, onClick, children }) {
   const [hov, setHov] = useState(false)
   return (
     <button
