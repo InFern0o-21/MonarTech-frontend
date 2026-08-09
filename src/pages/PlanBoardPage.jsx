@@ -368,6 +368,9 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
 
   // Status changes remain instant — no draft needed
   async function handleStatusChange(statusId) {
+    if (saving) return                          // guard double-click
+    const currentId = task.status?.id ?? task.status
+    if (currentId === statusId) return         // already this status
     setSaving(true)
     try { await onUpdate(task.id, { status: statusId }) } finally { setSaving(false) }
   }
@@ -377,11 +380,19 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
     if (!draft.title.trim()) return
     setSaving(true)
     try {
-      await onUpdate(task.id, {
+      const saved = await onUpdate(task.id, {
         title:       draft.title.trim(),
         description: draft.description,
         priority:    draft.priority,
         due_date:    draft.due_date || null,
+      })
+      // Reset draft to match what was saved so isDirty becomes false
+      const source = saved ?? task
+      setDraft({
+        title:       source.title       ?? '',
+        description: source.description ?? '',
+        priority:    source.priority    ?? 'MEDIUM',
+        due_date:    source.due_date ? source.due_date.split('T')[0] : '',
       })
       setDiscardWarning(false)
     } finally { setSaving(false) }
@@ -1133,7 +1144,7 @@ export default function PlanBoardPage() {
           editLevel={editLevel}
           currentUserId={user?.id}
           userPlanRole={userPlanRole}
-          onUpdate={async (id, patch) => { const updated = await updateTask(id, patch); handleTaskUpdated(updated) }}
+          onUpdate={async (id, patch) => { const updated = await updateTask(id, patch); handleTaskUpdated(updated); return updated }}
           onAddAssignee={addAssignee}
           onRemoveAssignee={removeAssignee}
           onClose={() => setSelectedTask(null)}
