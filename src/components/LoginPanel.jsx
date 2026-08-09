@@ -303,7 +303,7 @@ function RegisterForm({ P, isImperial, onSwitch }) {
           ✓ Account created! Check your email to verify your address before signing in.
         </div>
         <p style={{ margin: 0, fontSize: 14, color: P.textSub, textAlign: 'center' }}>
-          <LinkBtn onClick={() => onSwitch('login')}>← Back to sign in</LinkBtn>
+          <LinkBtn P={P} onClick={() => onSwitch('login')}>← Back to sign in</LinkBtn>
         </p>
       </div>
     )
@@ -405,30 +405,55 @@ function ForgotForm({ P, isImperial, onSwitch }) {
 
 /* ─── Shared primitives ──────────────────────────────────── */
 function Field({ P, label, type, value, onChange, placeholder, required, error }) {
-  const [focused, setFocused] = useState(false)
+  const [focused,  setFocused]  = useState(false)
+  const [showPass, setShowPass] = useState(false)
+  const isPassword = type === 'password'
+  const inputType  = isPassword ? (showPass ? 'text' : 'password') : type
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       <label style={{ fontSize: 13, fontWeight: 500, color: P.textSub }}>
         {label}
         {required && <span style={{ color: P.accent, marginLeft: 2 }}>*</span>}
       </label>
-      <input
-        type={type} value={value}
-        onChange={e => onChange(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        placeholder={placeholder} required={required} disabled={false}
-        style={{
-          height: 44, padding: '0 14px', borderRadius: 10,
-          border: `1.5px solid ${error ? P.error : focused ? P.borderFocus : P.border}`,
-          background: focused ? P.bgInputHover : P.bgInput,
-          color: P.text, fontSize: 14, outline: 'none',
-          width: '100%', boxSizing: 'border-box',
-          transition: 'border-color 0.15s, background 0.15s, box-shadow 0.15s',
-          boxShadow: focused ? `0 0 0 3px ${P.focusRing}` : 'none',
-          fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-        }}
-      />
+      <div style={{ position: 'relative' }}>
+        <input
+          type={inputType} value={value}
+          onChange={e => onChange(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          placeholder={placeholder} required={required} disabled={false}
+          style={{
+            height: 44, padding: isPassword ? '0 44px 0 14px' : '0 14px',
+            borderRadius: 10,
+            border: `1.5px solid ${error ? P.error : focused ? P.borderFocus : P.border}`,
+            background: focused ? P.bgInputHover : P.bgInput,
+            color: P.text, fontSize: 14, outline: 'none',
+            width: '100%', boxSizing: 'border-box',
+            transition: 'border-color 0.15s, background 0.15s, box-shadow 0.15s',
+            boxShadow: focused ? `0 0 0 3px ${P.focusRing}` : 'none',
+            fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+          }}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPass(v => !v)}
+            tabIndex={-1}
+            aria-label={showPass ? 'Hide password' : 'Show password'}
+            style={{
+              position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: P.textMuted, fontSize: 16, padding: 2, lineHeight: 1,
+              transition: 'color 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = P.textSub}
+            onMouseLeave={e => e.currentTarget.style.color = P.textMuted}
+          >
+            {showPass ? '🙈' : '👁'}
+          </button>
+        )}
+      </div>
       {error && <span style={{ fontSize: 12, color: P.error }}>{error}</span>}
     </div>
   )
