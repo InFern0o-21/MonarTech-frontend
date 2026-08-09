@@ -3,27 +3,39 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import apiClient from '../../lib/apiClient'
 import logoMark from '../../assets/logo/monartech-mark.svg'
+import ConfirmDialog from '../shared/ConfirmDialog'
 
 export default function Sidebar({ isOpen, onClose, isMobile }) {
   const { logout, user } = useAuth()
   const location = useLocation()
 
   const [plans,         setPlans]         = useState([])
+  const [plansLoading,  setPlansLoading]  = useState(true)
+  const [plansError,    setPlansError]    = useState(false)
   const [plansExpanded, setPlansExpanded] = useState(true)
+  const [confirmLogout, setConfirmLogout] = useState(false)
+
+  async function fetchPlans() {
+    setPlansLoading(true); setPlansError(false)
+    try {
+      const { data } = await apiClient.get('/api/plans/')
+      setPlans(data.results ?? data)
+    } catch {
+      setPlansError(true)
+    } finally {
+      setPlansLoading(false)
+    }
+  }
 
   useEffect(() => {
     if (!user) return
-    apiClient.get('/api/plans/')
-      .then(({ data }) => setPlans(data.results ?? data))
-      .catch(() => {})
+    fetchPlans()
   }, [user?.id])
 
   // Keep plans in sync when navigating (refetch on route change to plan pages)
   useEffect(() => {
     if (user && location.pathname.startsWith('/plans')) {
-      apiClient.get('/api/plans/')
-        .then(({ data }) => setPlans(data.results ?? data))
-        .catch(() => {})
+      fetchPlans()
     }
   }, [location.pathname])
 
@@ -31,9 +43,7 @@ export default function Sidebar({ isOpen, onClose, isMobile }) {
   useEffect(() => {
     function onPlanCreated() {
       if (!user) return
-      apiClient.get('/api/plans/')
-        .then(({ data }) => setPlans(data.results ?? data))
-        .catch(() => {})
+      fetchPlans()
     }
     window.addEventListener('plan:created', onPlanCreated)
     return () => window.removeEventListener('plan:created', onPlanCreated)
@@ -77,65 +87,94 @@ export default function Sidebar({ isOpen, onClose, isMobile }) {
             <span className="text-base leading-none">⬡</span> Workgroups
           </NavLink>
 
-          {/* Plans section */}
-          {plans.length > 0 && (
-            <div className="mt-2">
-              {/* Section header */}
-              <button
-                onClick={() => setPlansExpanded(v => !v)}
-                className="w-full flex items-center justify-between px-3 py-1.5 rounded-[var(--radius-sm)]
-                           border-none bg-transparent cursor-pointer transition-colors duration-150
-                           hover:bg-white/5"
-                style={{ fontFamily: 'var(--font-sans)' }}
-              >
-                <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--color-text-subtle)' }}>
-                  Plans
-                </span>
-                <span className="text-[10px]" style={{ color: 'var(--color-text-subtle)' }}>
-                  {plansExpanded ? '▲' : '▼'}
-                </span>
-              </button>
+          {/* Plans section — always rendered, issue #12 */}
+          <div className="mt-2">
+            {/* Section header */}
+            <button
+              onClick={() => setPlansExpanded(v => !v)}
+              aria-expanded={plansExpanded}
+              className="w-full flex items-center justify-between px-3 py-1.5 rounded-[var(--radius-sm)]
+                         border-none bg-transparent cursor-pointer transition-colors duration-150
+                         hover:bg-white/5"
+              style={{ fontFamily: 'var(--font-sans)' }}
+            >
+              <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--color-text-subtle)' }}>
+                Plans
+              </span>
+              <span className="text-[10px]" style={{ color: 'var(--color-text-subtle)' }}>
+                {plansExpanded ? '▲' : '▼'}
+              </span>
+            </button>
 
-              {plansExpanded && (
-                <div className="flex flex-col gap-0.5 mt-0.5">
-                  {/* Personal plans */}
-                  {personalPlans.map(plan => (
-                    <NavLink
-                      key={plan.id}
-                      to={`/plans/${plan.id}`}
-                      onClick={isMobile ? onClose : undefined}
-                      className={({ isActive }) => `nav-link pl-7 text-[13px]${isActive ? ' active' : ''}`}
-                    >
-                      <span className="text-sm leading-none">◫</span>
-                      <span className="truncate">{plan.title}</span>
-                    </NavLink>
-                  ))}
+            {plansExpanded && (
+              <div className="flex flex-col gap-0.5 mt-0.5">
+                {/* Issue #12: loading skeletons */}
+                {plansLoading && (
+                  <>
+                    {[1,2,3].map(i => (
+                      <div key={i} style={{ height: 30, margin: '2px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.05)', animation: 'skeleton-shimmer 1.4s ease-in-out infinite' }} />
+                    ))}
+                  </>
+                )}
 
-                  {/* Workgroup plans grouped by workgroup */}
-                  {workgroupPlans.length > 0 && personalPlans.length > 0 && (
-                    <div className="mx-3 my-1 h-px" style={{ background: 'var(--color-border)' }} />
-                  )}
-                  {workgroupPlans.map(plan => (
-                    <NavLink
-                      key={plan.id}
-                      to={`/plans/${plan.id}`}
-                      onClick={isMobile ? onClose : undefined}
-                      className={({ isActive }) => `nav-link pl-7 text-[13px]${isActive ? ' active' : ''}`}
-                      style={{ alignItems: 'flex-start' }}
-                    >
-                      <span className="text-sm leading-none" style={{ marginTop: 1 }}>◫</span>
-                      <span className="flex flex-col min-w-0">
+                {/* Issue #11: error state with retry */}
+                {!plansLoading && plansError && (
+                  <div className="px-3 py-2">
+                    <p className="text-[11px] mb-1" style={{ color: 'var(--color-error)' }}>Couldn't load plans.</p>
+                    <button onClick={fetchPlans} className="text-[11px] font-medium" style={{ color: 'var(--color-primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                      Retry ↻
+                    </button>
+                  </div>
+                )}
+
+                {!plansLoading && !plansError && (
+                  <>
+                    {/* Personal plans */}
+                    {personalPlans.map(plan => (
+                      <NavLink
+                        key={plan.id}
+                        to={`/plans/${plan.id}`}
+                        onClick={isMobile ? onClose : undefined}
+                        className={({ isActive }) => `nav-link pl-7 text-[13px]${isActive ? ' active' : ''}`}
+                      >
+                        <span className="text-sm leading-none">◫</span>
                         <span className="truncate">{plan.title}</span>
-                        <span className="truncate text-[10px] font-normal" style={{ color: 'var(--color-text-subtle)', marginTop: 1 }}>
-                          {plan.workgroup_name ?? `Workgroup #${plan.workgroup}`}
+                      </NavLink>
+                    ))}
+
+                    {/* Workgroup plans */}
+                    {workgroupPlans.length > 0 && personalPlans.length > 0 && (
+                      <div className="mx-3 my-1 h-px" style={{ background: 'var(--color-border)' }} />
+                    )}
+                    {workgroupPlans.map(plan => (
+                      <NavLink
+                        key={plan.id}
+                        to={`/plans/${plan.id}`}
+                        onClick={isMobile ? onClose : undefined}
+                        className={({ isActive }) => `nav-link pl-7 text-[13px]${isActive ? ' active' : ''}`}
+                        style={{ alignItems: 'flex-start' }}
+                      >
+                        <span className="text-sm leading-none" style={{ marginTop: 1 }}>◫</span>
+                        <span className="flex flex-col min-w-0">
+                          <span className="truncate">{plan.title}</span>
+                          <span className="truncate text-[10px] font-normal" style={{ color: 'var(--color-text-subtle)', marginTop: 1 }}>
+                            {plan.workgroup_name ?? `Workgroup #${plan.workgroup}`}
+                          </span>
                         </span>
-                      </span>
-                    </NavLink>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                      </NavLink>
+                    ))}
+
+                    {/* No plans yet hint */}
+                    {plans.length === 0 && (
+                      <p className="px-3 py-1 text-[11px]" style={{ color: 'var(--color-text-subtle)' }}>
+                        No plans yet.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Profile */}
           <div className="mt-1">
@@ -145,10 +184,10 @@ export default function Sidebar({ isOpen, onClose, isMobile }) {
           </div>
         </div>
 
-        {/* Sign out */}
+        {/* Sign out — issue #10: confirm before logging out */}
         <div className="p-2" style={{ borderTop: '1px solid var(--color-border)' }}>
           <button
-            onClick={logout}
+            onClick={() => setConfirmLogout(true)}
             className="w-full flex items-center gap-2.5 px-3 py-[9px] rounded-[var(--radius-sm)]
                        text-sm font-medium cursor-pointer border-none bg-transparent
                        transition-colors duration-150 hover:bg-red-500/10 hover:text-red-400"
@@ -159,6 +198,15 @@ export default function Sidebar({ isOpen, onClose, isMobile }) {
           </button>
         </div>
       </nav>
+
+      {/* Sign-out confirmation dialog — issue #10 */}
+      <ConfirmDialog
+        open={confirmLogout}
+        title="Sign out"
+        description="Sign out of Monartech? You'll need to sign in again to access your account."
+        onConfirm={() => { setConfirmLogout(false); logout() }}
+        onCancel={() => setConfirmLogout(false)}
+      />
     </>
   )
 }
