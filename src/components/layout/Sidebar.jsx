@@ -27,6 +27,18 @@ export default function Sidebar({ isOpen, onClose, isMobile }) {
     }
   }, [location.pathname])
 
+  // Issue #12: refetch when a plan is created from anywhere (e.g. Dashboard)
+  useEffect(() => {
+    function onPlanCreated() {
+      if (!user) return
+      apiClient.get('/api/plans/')
+        .then(({ data }) => setPlans(data.results ?? data))
+        .catch(() => {})
+    }
+    window.addEventListener('plan:created', onPlanCreated)
+    return () => window.removeEventListener('plan:created', onPlanCreated)
+  }, [user?.id])
+
   const personalPlans  = plans.filter(p => !p.workgroup)
   const workgroupPlans = plans.filter(p =>  p.workgroup)
 
