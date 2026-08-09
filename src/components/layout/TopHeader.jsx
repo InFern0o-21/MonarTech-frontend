@@ -49,7 +49,7 @@ export default function TopHeader({ onMenuClick }) {
       {/* Right side */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
 
-        {/* Theme toggle */}
+        {/* Theme toggle — issue #15: label shows where you'll GO, not where you are */}
         <button
           onClick={toggleTheme}
           title={isModern ? 'Switch to Imperial theme' : 'Switch to Modern theme'}
@@ -95,10 +95,25 @@ export default function TopHeader({ onMenuClick }) {
               border: isModern ? '1px solid #2a2a38' : '1px solid rgba(223,207,190,0.15)',
               boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
               borderRadius: isModern ? 10 : 6,
-              minWidth: 160,
+              minWidth: 180,
               padding: '4px',
             }}
           >
+            {/* Issue #24: user identity context at top of dropdown */}
+            <div style={{
+              padding: '10px 12px 8px',
+              borderBottom: isModern ? '1px solid #2a2a38' : '1px solid rgba(223,207,190,0.1)',
+              marginBottom: 4,
+            }}>
+              <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--color-text)', fontFamily: 'var(--font-sans)' }}>
+                {[user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.username}
+              </p>
+              {user?.email && (
+                <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--color-text-muted)', fontFamily: 'var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {user.email}
+                </p>
+              )}
+            </div>
             <DropdownMenuItem
               onClick={() => navigate('/profile')}
               style={{ borderRadius: isModern ? 6 : 4, cursor: 'pointer' }}
