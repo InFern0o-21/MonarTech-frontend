@@ -104,11 +104,18 @@ function timeAgo(iso) {
   return `${Math.floor(diff/86400)}d ago`
 }
 
-function ActivityItem({ event }) {
+function ActivityItem({ event, currentUsername }) {
   const style = EVENT_COLOR[event.event_type] ?? EVENT_COLOR.updated
   const verb  = event.event_type === 'completed' ? 'completed'
               : event.event_type === 'created'   ? 'created'
               : 'updated'
+
+  // Resolve actor label:
+  // - null actor on 'updated' means we don't know who did it, but show "You"
+  //   if it's in your feed and likely your own action (backend doesn't track updater yet)
+  // - if actor matches current user's username, show "You"
+  const actorLabel = !event.actor || event.actor === currentUsername ? 'You' : event.actor
+  const isYou = actorLabel === 'You'
 
   return (
     <div style={{
@@ -126,8 +133,8 @@ function ActivityItem({ event }) {
       </span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text)', fontWeight: 500, lineHeight: 1.4 }}>
-          <span style={{ color: style.color, fontWeight: 600 }}>
-            {event.actor ?? 'Someone'}
+          <span style={{ color: isYou ? 'var(--color-primary)' : style.color, fontWeight: 600 }}>
+            {actorLabel}
           </span>
           {' '}{verb}{' '}
           <Link to={`/plans/${event.plan_id}`} style={{ color: 'var(--color-text)', textDecoration: 'none', fontWeight: 600 }}
@@ -427,7 +434,7 @@ export default function DashboardPage() {
                   ? <p style={{ margin: '8px 0', fontSize: 13, color: 'var(--color-text-muted)', textAlign: 'center' }}>
                       No recent activity.
                     </p>
-                  : activity.map(ev => <ActivityItem key={`${ev.task_id}-${ev.event_type}`} event={ev} />)
+                  : activity.map(ev => <ActivityItem key={`${ev.task_id}-${ev.event_type}`} event={ev} currentUsername={user?.username} />)
               }
             </div>
           </div>
