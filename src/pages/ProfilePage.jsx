@@ -7,7 +7,7 @@ function getInitials(profile) {
   return (f + l).toUpperCase() || profile?.username?.[0]?.toUpperCase() || '?'
 }
 
-function Field({ label, id, value, onChange, readOnly = false, error, type = 'text' }) {
+function Field({ label, id, value, onChange, readOnly = false, error, type = 'text', hint }) {
   return (
     <div className="flex flex-col gap-1.5">
       <label
@@ -24,8 +24,14 @@ function Field({ label, id, value, onChange, readOnly = false, error, type = 'te
         onChange={e => onChange?.(e.target.value)}
         readOnly={readOnly}
         className="form-input h-11"
-        style={error ? { borderColor: 'var(--color-error)' } : undefined}
+        style={{
+          ...(error ? { borderColor: 'var(--color-error)' } : {}),
+          ...(readOnly ? { opacity: 0.6, cursor: 'default' } : {}),
+        }}
       />
+      {hint && !error && (
+        <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>{hint}</span>
+      )}
       {error && (
         <span className="text-[12px]" style={{ color: 'var(--color-error)' }}>{error}</span>
       )}
@@ -137,7 +143,7 @@ export default function ProfilePage() {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-[18px]">
-          <Field label="Email"    id="email"    value={profile?.email} readOnly />
+          <Field label="Email" id="email" value={profile?.email} readOnly hint="To change your email, contact support." />
           <Field label="Username" id="username" value={form.username}  onChange={set('username')} error={fieldErrors.username} />
           <div className="grid grid-cols-2 gap-3.5">
             <Field label="First name" id="first_name" value={form.first_name} onChange={set('first_name')} error={fieldErrors.first_name} />

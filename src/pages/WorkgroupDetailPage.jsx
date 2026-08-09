@@ -18,6 +18,7 @@ export default function WorkgroupDetailPage() {
   const { user } = useAuth()
   const { addToast } = useToast()
 
+  const [workgroupName,  setWorkgroupName]  = useState('')
   const [members,        setMembers]        = useState([])
   const [membersLoading, setMembersLoading] = useState(true)
   const [membersError,   setMembersError]   = useState(null)
@@ -39,9 +40,13 @@ export default function WorkgroupDetailPage() {
   const loadMembers = useCallback(async () => {
     setMembersLoading(true); setMembersError(null)
     try {
-      const { data } = await apiClient.get('/api/workgroup-members/', { params: { workgroup: id } })
-      const list = data.results ?? data
+      const [membersRes, wgRes] = await Promise.all([
+        apiClient.get('/api/workgroup-members/', { params: { workgroup: id } }),
+        apiClient.get(`/api/workgroups/${id}/`),
+      ])
+      const list = membersRes.data.results ?? membersRes.data
       setMembers(list)
+      setWorkgroupName(wgRes.data.name ?? '')
       try {
         const me = await apiClient.get('/api/users/me/')
         const mine = list.find(m => m.user === me.data.id)
@@ -123,6 +128,14 @@ export default function WorkgroupDetailPage() {
       >
         ← Workgroups
       </Link>
+
+      {/* Workgroup page title — issue #9 */}
+      {workgroupName && (
+        <div className="mb-7">
+          <p className="page-label">Workgroup</p>
+          <h1 className="page-title">{workgroupName}</h1>
+        </div>
+      )}
 
       {/* Members section */}
       <section className="mb-10">
@@ -261,7 +274,10 @@ export default function WorkgroupDetailPage() {
         )}
 
         {plansError && (
-          <p className="text-sm" style={{ color: 'var(--color-error)' }}>Could not load plans.</p>
+          <div className="banner-error mb-3">
+            Could not load plans.
+            <button onClick={() => window.location.reload()} className="btn btn-danger btn-sm">Retry</button>
+          </div>
         )}
 
         <div className="flex flex-col gap-2">

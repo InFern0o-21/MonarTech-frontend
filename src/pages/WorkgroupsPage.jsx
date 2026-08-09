@@ -115,7 +115,7 @@ export default function WorkgroupsPage() {
         </div>
         <button
           onClick={showForm ? closeForm : openNew}
-          className={`btn ${showForm ? 'btn-ghost' : 'btn-primary'}`}
+          className={`btn btn-sm ${showForm ? 'btn-ghost' : 'btn-primary'}`}
         >
           {showForm ? '✕ Cancel' : '+ New Workgroup'}
         </button>
@@ -194,7 +194,7 @@ export default function WorkgroupsPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         title="Delete Workgroup"
-        description={`Delete "${deleteTarget?.name}"? This cannot be undone.`}
+        description={`Delete "${deleteTarget?.name}"? This will permanently delete all plans and tasks inside this workgroup. This cannot be undone.`}
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />
