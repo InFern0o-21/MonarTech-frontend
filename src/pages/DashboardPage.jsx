@@ -51,6 +51,8 @@ function WorkgroupChip({ wg, selected, onClick }) {
 
 // ─── PlanCard ─────────────────────────────────────────────────────────────────
 function PlanCard({ plan }) {
+  const total     = plan.task_count ?? 0
+  const completed = plan.completed_task_count ?? 0
   return (
     <Link to={`/plans/${plan.id}`} className="block no-underline">
       <div className="card cursor-pointer hover:translate-y-[-2px] transition-transform duration-200">
@@ -74,6 +76,11 @@ function PlanCard({ plan }) {
           <p className="m-0 text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
             {plan.workgroup_name ?? (plan.workgroup ? `Workgroup #${plan.workgroup}` : 'Personal board')}
           </p>
+          {total > 0 && (
+            <p className="m-0 mt-2 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+              {total} task{total !== 1 ? 's' : ''} · {completed} done
+            </p>
+          )}
         </div>
       </div>
     </Link>
@@ -190,7 +197,7 @@ export default function DashboardPage() {
   async function loadActivity() {
     setActLoading(true)
     try {
-      const { data } = await apiClient.get('/api/activity/', { params: { limit: 5 } })
+      const { data } = await apiClient.get('/api/activity/', { params: { limit: 15 } })
       setActivity(data)
     } catch {}
     finally { setActLoading(false) }
@@ -209,6 +216,7 @@ export default function DashboardPage() {
       addToast('success', 'Plan created')
       setPlans(prev => [...prev, data])
       setPlanTitle(''); setPlanDesc(''); setShowPlanForm(false)
+      window.dispatchEvent(new CustomEvent('plan:created'))
       navigate(`/plans/${data.id}`)
     } catch (err) {
       addToast('error', err?.response?.data?.detail ?? 'Failed to create plan.')
@@ -252,7 +260,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Main layout — left column (workgroup filter + plans) + right column (activity) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 24, alignItems: 'start' }}>
+      <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 24, alignItems: 'start' }}>
 
         {/* ── Left column ── */}
         <div>
