@@ -147,6 +147,7 @@ function AssigneesSection({ task, planId, planWorkgroup, canEdit, currentUserId,
 
 // ─── AttachmentsSection ───────────────────────────────────────────────────────
 function AttachmentsSection({ taskId, canUpload, canDelete }) {
+  const { addToast } = useToast()
   const [attachments, setAttachments] = useState([])
   const [uploading,   setUploading]   = useState(false)
   const fileRef = React.useRef(null)
@@ -165,7 +166,9 @@ function AttachmentsSection({ taskId, canUpload, canDelete }) {
       form.append('file', file); form.append('task', taskId)
       const { data } = await apiClient.post('/api/task-attachments/', form, { headers: { 'Content-Type': 'multipart/form-data' } })
       setAttachments(prev => [...prev, data])
-    } catch (err) { alert(err?.response?.data?.file?.[0] ?? 'Upload failed.') }
+    } catch (err) {
+      addToast('error', err?.response?.data?.file?.[0] ?? 'Upload failed.')
+    }
     finally { setUploading(false); e.target.value = '' }
   }
 
@@ -307,7 +310,7 @@ function ChecklistSection({ taskId, canEdit }) {
 }
 
 // ─── TaskDetailModal ──────────────────────────────────────────────────────────
-// On mobile  → slides up from the bottom as a bottom sheet (max 92vh, drag handle)
+// On mobile  → slides up from the bottom as a bottom sheet (max 92vh)
 // On desktop → centered modal, max 600px wide
 function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemoveAssignee, onAddAssignee, currentUserId, userPlanRole }) {
   const [saving,    setSaving]    = useState(false)
@@ -415,10 +418,10 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
         style={{
           position:'fixed', zIndex:51,
           fontFamily:'var(--font-sans)',
-          background: 'linear-gradient(180deg, rgba(25,14,36,0.98) 0%, rgba(13,6,20,1) 100%)',
-          borderTop: '1px solid rgba(223,207,190,0.25)',
-          borderLeft: '1px solid rgba(223,207,190,0.12)',
-          borderRight: '1px solid rgba(223,207,190,0.12)',
+          background: 'var(--color-surface)',
+          borderTop: '1px solid var(--color-border)',
+          borderLeft: '1px solid var(--color-border)',
+          borderRight: '1px solid var(--color-border)',
           display:'flex', flexDirection:'column',
 
           /* ── mobile: bottom sheet ── */
@@ -431,11 +434,6 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
         }}
         className="task-detail-modal"
       >
-        {/* Drag handle (mobile visual cue) */}
-        <div style={{ display:'flex', justifyContent:'center', paddingTop:10, paddingBottom:4, flexShrink:0 }}>
-          <div style={{ width:36, height:4, borderRadius:2, background:'rgba(255,255,255,0.15)' }} />
-        </div>
-
         {/* Imperial accent line */}
         <div style={{
           height:1, flexShrink:0,
@@ -748,7 +746,7 @@ function TaskFormModal({ planId, statuses, createTask, onCreated, onClose, addTo
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-5">
-      <div aria-hidden onClick={onClose} className="absolute inset-0" style={{ background:'rgba(0,0,0,0.6)' }} />
+      <div aria-hidden onClick={onClose} className="absolute inset-0" style={{ background:'rgba(0,0,0,0.85)' }} />
       <div role="dialog" aria-modal aria-label="New task"
         style={{ position:'relative', width:'100%', maxWidth:480, borderRadius:16, padding:24, background:'var(--gradient-card)', border:`1px solid ${P.border}`, fontFamily:'var(--font-sans)' }}>
         <h2 style={{ margin:'0 0 20px', fontSize:18, fontWeight:700, color:'#fff' }}>New Task</h2>
@@ -881,8 +879,6 @@ function ManageStatusesModal({ planId, statuses, onClose, createStatus, updateSt
                       style={{ width:36, height:36, padding:2, borderRadius:8, border:`1.5px solid ${P.border}`, background:'var(--color-surface)', cursor:'pointer' }} title="Pick a color" />
                   </div>
                   <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                    <input type="number" value={editOrder} onChange={e=>setEditOrder(Number(e.target.value))} placeholder="Order"
-                      style={{ width:70, height:34, padding:'0 8px', borderRadius:8, border:`1.5px solid ${P.border}`, background:'var(--color-surface)', color:'var(--color-text)', fontSize:13, fontFamily:'var(--font-sans)', outline:'none' }} />
                     <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, color:'rgba(255,255,255,0.6)', cursor:'pointer', userSelect:'none' }}>
                       <input type="checkbox" checked={editTerm} onChange={e=>setEditTerm(e.target.checked)} style={{ accentColor:P.accent }} />
                       Mark as "Done" (terminal)
@@ -1105,7 +1101,7 @@ export default function PlanBoardPage() {
                   </div>
                   <div className="flex flex-col gap-2">
                     {colTasks.map(task => (
-                      <TaskCard key={task.id} task={task} onClick={() => setSelectedTask(task)} />
+                      <TaskCard key={task.id} task={task} onClick={() => setSelectedTask(task)} isTerminalColumn={status.is_terminal} />
                     ))}
                     {colTasks.length === 0 && (
                       <div className="px-3 py-4 rounded-[10px] text-center" style={{ border:'1px dashed var(--color-border)' }}>
