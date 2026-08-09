@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useToast } from '../hooks/useToast'
 import { useTasks } from '../hooks/useTasks'
@@ -948,6 +948,7 @@ export default function PlanBoardPage() {
   const { id: planId } = useParams()
   const { user } = useAuth()
   const { addToast } = useToast()
+  const location = useLocation()
   const { tasks, loading: tasksLoading, error: tasksError, fetchTasks, createTask, updateTask, addAssignee, removeAssignee } = useTasks()
   const { statuses, loading: statusesLoading, error: statusesError, refetch: refetchStatuses, createStatus, updateStatus, deleteStatus } = useTaskStatuses(planId)
 
@@ -959,6 +960,15 @@ export default function PlanBoardPage() {
   const [planTitle,          setPlanTitle]          = useState('')
 
   useEffect(() => { fetchTasks(planId) }, [planId])
+
+  // Auto-open a specific task when navigated from activity feed
+  useEffect(() => {
+    const openTaskId = location.state?.openTaskId
+    if (!openTaskId) return
+    // Wait until tasks are loaded, then find and open the task
+    const task = tasks.find(t => t.id === openTaskId)
+    if (task) setSelectedTask(task)
+  }, [location.state?.openTaskId, tasks])
 
   // Fetch plan title for the page header
   useEffect(() => {

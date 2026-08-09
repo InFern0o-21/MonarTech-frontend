@@ -88,65 +88,98 @@ function PlanCard({ plan }) {
 }
 
 // ─── ActivityItem ─────────────────────────────────────────────────────────────
-const EVENT_ICON = { completed: '✓', created: '+', updated: '↻' }
+const EVENT_ICON = { completed: '✓', created: '+', updated: '↻', reopened: '↺' }
 const EVENT_COLOR = {
-  completed: { bg: 'rgba(74,222,128,0.1)',  border: 'rgba(74,222,128,0.25)',  color: '#4ade80' },
-  created:   { bg: 'rgba(99,102,241,0.1)',  border: 'rgba(99,102,241,0.25)',  color: '#818cf8' },
-  updated:   { bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.45)' },
+  completed: { bg: 'rgba(74,222,128,0.08)',   border: 'rgba(74,222,128,0.22)',   color: '#4ade80' },
+  created:   { bg: 'rgba(99,102,241,0.08)',   border: 'rgba(99,102,241,0.22)',   color: '#818cf8' },
+  updated:   { bg: 'rgba(255,255,255,0.03)',  border: 'rgba(255,255,255,0.07)',  color: 'rgba(255,255,255,0.4)' },
+  reopened:  { bg: 'rgba(251,146,60,0.08)',   border: 'rgba(251,146,60,0.22)',   color: '#fb923c' },
 }
 
 function timeAgo(iso) {
   if (!iso) return ''
   const diff = (Date.now() - new Date(iso)) / 1000
-  if (diff < 60)  return 'just now'
-  if (diff < 3600) return `${Math.floor(diff/60)}m ago`
-  if (diff < 86400) return `${Math.floor(diff/3600)}h ago`
-  return `${Math.floor(diff/86400)}d ago`
+  if (diff < 60)   return 'just now'
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+  return `${Math.floor(diff / 86400)}d ago`
 }
 
 function ActivityItem({ event, currentUsername }) {
-  const style = EVENT_COLOR[event.event_type] ?? EVENT_COLOR.updated
-  const verb  = event.event_type === 'completed' ? 'completed'
-              : event.event_type === 'created'   ? 'created'
-              : 'updated'
+  const navigate = useNavigate()
+  const style    = EVENT_COLOR[event.event_type] ?? EVENT_COLOR.updated
+  const verb     = event.event_type === 'completed' ? 'completed'
+                 : event.event_type === 'created'   ? 'created'
+                 : event.event_type === 'reopened'  ? 'reopened'
+                 : 'updated'
 
-  // Resolve actor label:
-  // - null actor on 'updated' means we don't know who did it, but show "You"
-  //   if it's in your feed and likely your own action (backend doesn't track updater yet)
-  // - if actor matches current user's username, show "You"
-  const actorLabel = !event.actor || event.actor === currentUsername ? 'You' : event.actor
-  const isYou = actorLabel === 'You'
+  const isYou      = !!event.actor && event.actor === currentUsername
+  const actorLabel = isYou ? 'You' : (event.actor ?? 'Someone')
+
+  // Clicking the task title → navigate to the plan board and open the task modal
+  function handleTaskClick(e) {
+    e.preventDefault()
+    navigate(`/plans/${event.plan_id}`, { state: { openTaskId: event.task_id } })
+  }
+
+  const changes = event.changes ?? []
 
   return (
     <div style={{
-      display: 'flex', gap: 10, alignItems: 'flex-start',
+      display: 'flex', flexDirection: 'column', gap: 6,
       padding: '10px 12px', borderRadius: 10,
       background: style.bg, border: `1px solid ${style.border}`,
     }}>
-      <span style={{
-        width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 11, fontWeight: 700, color: style.color,
-        background: 'rgba(0,0,0,0.2)',
-      }}>
-        {EVENT_ICON[event.event_type]}
-      </span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text)', fontWeight: 500, lineHeight: 1.4 }}>
-          <span style={{ color: isYou ? 'var(--color-primary)' : style.color, fontWeight: 600 }}>
-            {actorLabel}
-          </span>
-          {' '}{verb}{' '}
-          <Link to={`/plans/${event.plan_id}`} style={{ color: 'var(--color-text)', textDecoration: 'none', fontWeight: 600 }}
-            onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
-            onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}>
-            {event.task_title}
-          </Link>
-        </p>
-        <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--color-text-muted)' }}>
-          {event.plan_title} · {timeAgo(event.timestamp)}
-        </p>
+      {/* Top row: icon + text + time */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+        <span style={{
+          width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 10, fontWeight: 700, color: style.color,
+          background: 'rgba(0,0,0,0.2)', marginTop: 1,
+        }}>
+          {EVENT_ICON[event.event_type]}
+        </span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text)', fontWeight: 500, lineHeight: 1.4 }}>
+            <span style={{ color: isYou ? 'var(--color-primary)' : style.color, fontWeight: 600 }}>
+              {actorLabel}
+            </span>
+            {' '}{verb}{' '}
+            <a
+              href={`/plans/${event.plan_id}`}
+              onClick={handleTaskClick}
+              style={{ color: 'var(--color-text)', fontWeight: 600, cursor: 'pointer',
+                textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.25)',
+                textUnderlineOffset: 3 }}
+            >
+              {event.task_title}
+            </a>
+          </p>
+          <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--color-text-muted)' }}>
+            {event.plan_title} · {timeAgo(event.timestamp)}
+          </p>
+        </div>
       </div>
+
+      {/* Change summary badges — right edge of card */}
+      {changes.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, paddingLeft: 28 }}>
+          {changes.map((c, i) => (
+            <span key={i} style={{
+              fontSize: 10, fontWeight: 600, padding: '2px 6px',
+              borderRadius: 4,
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: 'var(--color-text-muted)',
+              letterSpacing: '0.02em',
+              whiteSpace: 'nowrap',
+            }}>
+              {c}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -434,7 +467,7 @@ export default function DashboardPage() {
                   ? <p style={{ margin: '8px 0', fontSize: 13, color: 'var(--color-text-muted)', textAlign: 'center' }}>
                       No recent activity.
                     </p>
-                  : activity.map(ev => <ActivityItem key={`${ev.task_id}-${ev.event_type}`} event={ev} currentUsername={user?.username} />)
+                  : activity.map(ev => <ActivityItem key={ev.id} event={ev} currentUsername={user?.username} />)
               }
             </div>
           </div>
