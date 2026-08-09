@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useWorkgroups } from '../hooks/useWorkgroups'
+import { useToast } from '../hooks/useToast'
 import SkeletonCard from '../components/shared/SkeletonCard'
 import ConfirmDialog from '../components/shared/ConfirmDialog'
 
@@ -69,6 +70,7 @@ function WorkgroupCard({ wg, onEdit, onDelete }) {
 
 export default function WorkgroupsPage() {
   const { workgroups, loading, error, refetch, createWorkgroup, updateWorkgroup, deleteWorkgroup } = useWorkgroups()
+  const { addToast } = useToast()
 
   const [showForm,     setShowForm]     = useState(false)
   const [editTarget,   setEditTarget]   = useState(null)
@@ -90,12 +92,16 @@ export default function WorkgroupsPage() {
       if (editTarget) await updateWorkgroup(editTarget.id, { name: name.trim(), description: desc.trim() })
       else await createWorkgroup({ name: name.trim(), description: desc.trim() })
       closeForm()
-    } catch {} finally { setSaving(false) }
+    } catch (err) {
+      addToast('error', err?.response?.data?.detail ?? 'Failed to save workgroup.')
+    } finally { setSaving(false) }
   }
 
   async function handleDelete() {
     if (!deleteTarget) return
-    try { await deleteWorkgroup(deleteTarget.id) } catch {} finally { setDeleteTarget(null) }
+    try { await deleteWorkgroup(deleteTarget.id) }
+    catch (err) { addToast('error', err?.response?.data?.detail ?? 'Failed to delete workgroup.') }
+    finally { setDeleteTarget(null) }
   }
 
   return (
@@ -117,7 +123,7 @@ export default function WorkgroupsPage() {
 
       {/* Inline form */}
       {showForm && (
-        <div className="card mb-6" style={{ border: '1px solid rgba(99,102,241,0.4)' }}>
+        <div className="card mb-6" style={{ border: '1px solid var(--color-border-light)' }}>
           <div className="card-top-bar" />
           <form onSubmit={handleFormSubmit} className="card-body flex flex-col gap-3.5">
             <h3
