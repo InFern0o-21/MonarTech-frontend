@@ -18,7 +18,7 @@
 
   --color-text:         #ffffff;             /* white body text — same as reference */
   --color-text-muted:   rgba(255,255,255,0.6);
-  --color-text-subtle:  rgba(255,255,255,0.35);
+  --color-text-subtle:  rgba(255,255,255,0.50);
 
   --color-success:      #22c55e;
   --color-warning:      #f59e0b;
@@ -61,7 +61,7 @@
   --color-accent-dim:   rgba(223,207,190,0.08);
   --color-text:         #ffffff;
   --color-text-muted:   rgba(255,255,255,0.6);
-  --color-text-subtle:  rgba(255,255,255,0.35);
+  --color-text-subtle:  rgba(255,255,255,0.50);
   --color-success:      #22c55e;
   --color-warning:      #f59e0b;
   --color-error:        #ef4444;
