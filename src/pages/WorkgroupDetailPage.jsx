@@ -97,13 +97,21 @@ export default function WorkgroupDetailPage() {
     setPlanSaving(true)
     try {
       await createPlan({ title: planTitle.trim(), description: planDesc.trim(), workgroup: Number(id) })
+      addToast('success', 'Plan created')
       setPlanTitle(''); setPlanDesc(''); setShowPlanForm(false)
-    } catch {} finally { setPlanSaving(false) }
+    } catch (err) {
+      addToast('error', err?.response?.data?.detail ?? 'Failed to create plan.')
+    } finally { setPlanSaving(false) }
   }
 
   async function handleDeletePlan() {
     if (!deletePlanTarget) return
-    try { await deletePlan(deletePlanTarget.id) } catch {} finally { setDeletePlanTarget(null) }
+    try {
+      await deletePlan(deletePlanTarget.id)
+      addToast('success', 'Plan deleted')
+    } catch (err) {
+      addToast('error', err?.response?.data?.detail ?? 'Failed to delete plan.')
+    } finally { setDeletePlanTarget(null) }
   }
 
   return (
