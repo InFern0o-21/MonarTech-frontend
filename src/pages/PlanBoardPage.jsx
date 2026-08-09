@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useToast } from '../hooks/useToast'
 import { useTasks } from '../hooks/useTasks'
 import { useTaskStatuses } from '../hooks/useTaskStatuses'
 import apiClient from '../lib/apiClient'
@@ -9,6 +10,7 @@ import { getTaskEditLevel } from '../lib/taskPermissions'
 import TaskCard from '../components/shared/TaskCard'
 import SkeletonCard from '../components/shared/SkeletonCard'
 import DatePicker from '../components/shared/DatePicker'
+import ConfirmDialog from '../components/shared/ConfirmDialog'
 
 const PRIORITY_OPTIONS = [
   { value: 'LOW',       label: 'Low' },
@@ -718,7 +720,7 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
 }
 
 // ─── TaskFormModal ────────────────────────────────────────────────────────────
-function TaskFormModal({ planId, statuses, createTask, onCreated, onClose }) {
+function TaskFormModal({ planId, statuses, createTask, onCreated, onClose, addToast }) {
   const [title,   setTitle]   = useState('')
   const [desc,    setDesc]    = useState('')
   const [priority,setPriority]= useState('MEDIUM')
@@ -736,6 +738,7 @@ function TaskFormModal({ planId, statuses, createTask, onCreated, onClose }) {
     setSaving(true)
     try {
       const created = await createTask({ title:title.trim(), plan:Number(planId), status:defaultStatus.id, description:desc.trim()||undefined, priority, due_date:dueDate||undefined })
+      addToast('success', 'Task created')
       onCreated(created); onClose()
     } catch (err) {
       const data = err?.response?.data??{}
@@ -785,18 +788,19 @@ function TaskFormModal({ planId, statuses, createTask, onCreated, onClose }) {
 }
 
 // ─── ManageStatusesModal ──────────────────────────────────────────────────────
-function ManageStatusesModal({ planId, statuses, onClose, createStatus, updateStatus, deleteStatus }) {
-  const [editingId,  setEditingId]  = useState(null)
-  const [editName,   setEditName]   = useState('')
-  const [editColor,  setEditColor]  = useState('')
-  const [editOrder,  setEditOrder]  = useState(0)
-  const [editTerm,   setEditTerm]   = useState(false)
-  const [newName,    setNewName]    = useState('')
-  const [newColor,   setNewColor]   = useState('#6366f1')
-  const [newTerm,    setNewTerm]    = useState(false)
-  const [saving,     setSaving]     = useState(false)
-  const [deleting,   setDeleting]   = useState(null)
-  const [error,      setError]      = useState('')
+function ManageStatusesModal({ planId, statuses, onClose, createStatus, updateStatus, deleteStatus, addToast }) {
+  const [editingId,      setEditingId]      = useState(null)
+  const [editName,       setEditName]       = useState('')
+  const [editColor,      setEditColor]      = useState('')
+  const [editOrder,      setEditOrder]      = useState(0)
+  const [editTerm,       setEditTerm]       = useState(false)
+  const [newName,        setNewName]        = useState('')
+  const [newColor,       setNewColor]       = useState('#6366f1')
+  const [newTerm,        setNewTerm]        = useState(false)
+  const [saving,         setSaving]         = useState(false)
+  const [deleting,       setDeleting]       = useState(null)
+  const [deleteTarget,   setDeleteTarget]   = useState(null)  // issue #4: replaces window.confirm
+  const [error,          setError]          = useState('')
 
   function startEdit(s) {
     setEditingId(s.id); setEditName(s.name); setEditColor(s.color || ''); setEditOrder(s.order); setEditTerm(s.is_terminal); setError('')
@@ -826,8 +830,15 @@ function ManageStatusesModal({ planId, statuses, onClose, createStatus, updateSt
     } finally { setSaving(false) }
   }
 
-  async function handleDelete(s) {
-    if (!window.confirm(`Delete status "${s.name}"? Tasks using it must be re-assigned first.`)) return
+  // Issue #4: replaced window.confirm with ConfirmDialog
+  function handleDelete(s) {
+    setDeleteTarget(s)
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    const s = deleteTarget
+    setDeleteTarget(null)
     setDeleting(s.id); setError('')
     try {
       await deleteStatus(s.id)
@@ -835,6 +846,7 @@ function ManageStatusesModal({ planId, statuses, onClose, createStatus, updateSt
       const msg = err?.response?.data
       const text = typeof msg === 'string' ? msg : (msg?.detail ?? msg?.[0] ?? 'Cannot delete — tasks may still use this status.')
       setError(text)
+      addToast('error', text)
     } finally { setDeleting(null) }
   }
 
@@ -924,6 +936,13 @@ function ManageStatusesModal({ planId, statuses, onClose, createStatus, updateSt
           </div>
         </div>
       </div>
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Delete Status"
+        description={`Delete "${deleteTarget?.name}"? Tasks using it must be reassigned first.`}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }
@@ -932,16 +951,26 @@ function ManageStatusesModal({ planId, statuses, onClose, createStatus, updateSt
 export default function PlanBoardPage() {
   const { id: planId } = useParams()
   const { user } = useAuth()
+  const { addToast } = useToast()
   const { tasks, loading: tasksLoading, error: tasksError, fetchTasks, createTask, updateTask, addAssignee, removeAssignee } = useTasks()
   const { statuses, loading: statusesLoading, error: statusesError, refetch: refetchStatuses, createStatus, updateStatus, deleteStatus } = useTaskStatuses(planId)
 
-  const [filters,         setFilters]         = useState(DEFAULT_FILTERS)
-  const [selectedTask,    setSelectedTask]    = useState(null)
-  const [showNewTask,     setShowNewTask]     = useState(false)
+  const [filters,            setFilters]            = useState(DEFAULT_FILTERS)
+  const [selectedTask,       setSelectedTask]       = useState(null)
+  const [showNewTask,        setShowNewTask]        = useState(false)
   const [showManageStatuses, setShowManageStatuses] = useState(false)
-  const [userPlanRole,    setUserPlanRole]    = useState('member')
+  const [userPlanRole,       setUserPlanRole]       = useState('member')
+  const [planTitle,          setPlanTitle]          = useState('')
 
   useEffect(() => { fetchTasks(planId) }, [planId])
+
+  // Fetch plan title for the page header
+  useEffect(() => {
+    if (!planId) return
+    apiClient.get(`/api/plans/${planId}/`)
+      .then(({ data }) => setPlanTitle(data.title ?? ''))
+      .catch(() => {})
+  }, [planId])
 
   useEffect(() => {
     if (!user) return
@@ -965,8 +994,34 @@ export default function PlanBoardPage() {
     if (selectedTask?.id === updated.id) setSelectedTask(updated)
   }
 
+  // Issue #1: append new task to the board immediately after creation
+  function handleTaskCreated(newTask) {
+    fetchTasks(planId)
+  }
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      {/* Issue #2: Plan title header + back navigation (#6) */}
+      <div className="flex items-center gap-3 pb-3 flex-shrink-0">
+        <Link
+          to="/dashboard"
+          className="text-[13px] no-underline flex-shrink-0"
+          style={{ color: 'var(--color-text-muted)' }}
+          onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
+          onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-muted)'}
+        >
+          ← Dashboard
+        </Link>
+        {planTitle && (
+          <>
+            <span style={{ color: 'var(--color-border)', fontSize: 14 }}>/</span>
+            <h1 className="m-0 text-[16px] font-bold tracking-tight truncate" style={{ color: 'var(--color-text)' }}>
+              {planTitle}
+            </h1>
+          </>
+        )}
+      </div>
+
       <div className="flex items-center gap-2.5 pb-4 flex-wrap flex-shrink-0">
         <input value={filters.search} onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
           placeholder="Search tasks…" className="form-input h-9 w-[200px] text-[13px]" />
@@ -1019,9 +1074,16 @@ export default function PlanBoardPage() {
             ))
           ) : statuses.length === 0 ? (
             <div className="flex flex-col items-center gap-3 pt-16 w-full">
-              <p className="text-sm" style={{ color:'var(--color-text-muted)' }}>No statuses yet.</p>
-              {canManageStatuses && (
-                <button onClick={() => setShowManageStatuses(true)} className="btn btn-ghost btn-sm">+ Add a status</button>
+              {canManageStatuses ? (
+                <>
+                  <p className="text-sm" style={{ color:'var(--color-text-muted)' }}>No statuses yet.</p>
+                  <button onClick={() => setShowManageStatuses(true)} className="btn btn-ghost btn-sm">+ Add a status</button>
+                </>
+              ) : (
+                // Issue #7: meaningful message for non-owners on empty board
+                <p className="text-sm text-center" style={{ color:'var(--color-text-muted)', maxWidth: 280 }}>
+                  The board owner hasn't set up any columns yet. Check back later.
+                </p>
               )}
             </div>
           ) : (
@@ -1073,7 +1135,7 @@ export default function PlanBoardPage() {
       )}
 
       {showNewTask && (
-        <TaskFormModal planId={planId} statuses={statuses} createTask={createTask} onCreated={() => {}} onClose={() => setShowNewTask(false)} />
+        <TaskFormModal planId={planId} statuses={statuses} createTask={createTask} onCreated={handleTaskCreated} onClose={() => setShowNewTask(false)} addToast={addToast} />
       )}
 
       {showManageStatuses && (
@@ -1084,6 +1146,7 @@ export default function PlanBoardPage() {
           createStatus={createStatus}
           updateStatus={updateStatus}
           deleteStatus={deleteStatus}
+          addToast={addToast}
         />
       )}
     </div>
