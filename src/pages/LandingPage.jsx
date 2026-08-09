@@ -40,15 +40,21 @@ const MODERN = {
 }
 
 export default function LandingPage() {
-  const [panelOpen, setPanelOpen] = useState(false)
+  const [panelOpen,    setPanelOpen]    = useState(false)
+  const [panelMode,    setPanelMode]    = useState('login')
   const location = useLocation()
   const navigate = useNavigate()
   const { theme, toggleTheme } = useTheme()
   const C = theme === 'modern' ? MODERN : IMPERIAL
-  const open = () => setPanelOpen(true)
+
+  // Sign in — opens login form
+  const openLogin    = () => { setPanelMode('login');    setPanelOpen(true) }
+  // Get started / Register — opens register form
+  const openRegister = () => { setPanelMode('register'); setPanelOpen(true) }
 
   useEffect(() => {
     if (location.state?.openPanel) {
+      setPanelMode(location.state.mode ?? 'login')
       setPanelOpen(true)
       navigate('/', { replace: true, state: {} })
     }
@@ -60,24 +66,26 @@ export default function LandingPage() {
         ? 'radial-gradient(circle at 80% 80%, #2f1238 0%, #0c0612 70%)'
         : 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(99,102,241,0.12) 0%, transparent 70%)',
     }}>
-      <Navbar onOpen={open} C={C} theme={theme} onToggleTheme={toggleTheme} />
-      <Hero onOpen={open} C={C} theme={theme} />
+      <Navbar onSignIn={openLogin} onGetStarted={openRegister} C={C} theme={theme} onToggleTheme={toggleTheme} />
+      <Hero onGetStarted={openRegister} C={C} theme={theme} />
       <Features C={C} theme={theme} />
       <HowItWorks C={C} theme={theme} />
-      <Cta onOpen={open} C={C} theme={theme} />
+      <Cta onGetStarted={openRegister} C={C} theme={theme} />
       <Footer C={C} />
       <LoginPanel
         isOpen={panelOpen}
         onClose={() => setPanelOpen(false)}
         onSuccess={() => setPanelOpen(false)}
+        initialMode={panelMode}
       />
     </div>
   )
 }
 
 /* ─── Navbar ─────────────────────────────────────────────── */
-function Navbar({ onOpen, C, theme, onToggleTheme }) {
-  const [hov, setHov] = useState(null)
+function Navbar({ onSignIn, onGetStarted, C, theme, onToggleTheme }) {
+  const [hov,        setHov]        = useState(null)
+  const [menuOpen,   setMenuOpen]   = useState(false)
   const isImperial = theme === 'imperial'
   const links = ['Features', 'How it works']
 
@@ -101,8 +109,8 @@ function Navbar({ onOpen, C, theme, onToggleTheme }) {
         }}>Monartech</span>
       </div>
 
-      {/* Nav links */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      {/* Nav links — hidden on mobile */}
+      <div className="navbar-links" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         {links.map(l => (
           <a key={l} href={`#${l.toLowerCase().replace(/ /g,'-')}`}
             onMouseEnter={() => setHov(l)} onMouseLeave={() => setHov(null)}
@@ -120,9 +128,9 @@ function Navbar({ onOpen, C, theme, onToggleTheme }) {
         ))}
       </div>
 
-      {/* Right side — theme toggle + auth */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        {/* Theme toggle */}
+      {/* Right side — theme toggle + auth (hidden on mobile) */}
+      <div className="navbar-ctas" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {/* Theme toggle — issue #15: clearer label */}
         <button
           onClick={onToggleTheme}
           title={isImperial ? 'Switch to Modern theme' : 'Switch to Imperial theme'}
@@ -139,11 +147,72 @@ function Navbar({ onOpen, C, theme, onToggleTheme }) {
             transition: 'all 0.2s',
           }}
         >
+          {/* Show which theme you'll switch TO */}
           {isImperial ? '◈ Modern' : '⚜ Imperial'}
         </button>
-        <Btn variant="ghost" onClick={onOpen} C={C} theme={theme}>Sign in</Btn>
-        <Btn variant="primary" onClick={onOpen} C={C} theme={theme}>Get started</Btn>
+        <Btn variant="ghost"   onClick={onSignIn}     C={C} theme={theme}>Sign in</Btn>
+        <Btn variant="primary" onClick={onGetStarted} C={C} theme={theme}>Get started</Btn>
       </div>
+
+      {/* Hamburger — mobile only */}
+      <button
+        className="navbar-hamburger"
+        onClick={() => setMenuOpen(v => !v)}
+        aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+        style={{
+          display: 'none', /* shown via CSS media query */
+          flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
+          width: 36, height: 36, background: 'transparent',
+          border: `1px solid ${C.border}`, borderRadius: 8, cursor: 'pointer',
+        }}
+      >
+        <span style={{ width: 18, height: 1.5, background: C.textSub, display: 'block', transition: 'all 0.2s',
+          transform: menuOpen ? 'rotate(45deg) translate(5px, 5px)' : 'none' }} />
+        <span style={{ width: 18, height: 1.5, background: C.textSub, display: 'block', transition: 'all 0.2s',
+          opacity: menuOpen ? 0 : 1 }} />
+        <span style={{ width: 18, height: 1.5, background: C.textSub, display: 'block', transition: 'all 0.2s',
+          transform: menuOpen ? 'rotate(-45deg) translate(5px, -5px)' : 'none' }} />
+      </button>
+
+      {/* Mobile dropdown */}
+      {menuOpen && (
+        <div style={{
+          position: 'absolute', top: 64, left: 0, right: 0,
+          background: isImperial ? 'rgba(12,6,18,0.98)' : 'rgba(10,10,15,0.98)',
+          borderBottom: `1px solid ${C.border}`,
+          backdropFilter: 'blur(20px)',
+          padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 12,
+        }}>
+          {links.map(l => (
+            <a key={l} href={`#${l.toLowerCase().replace(/ /g,'-')}`}
+              onClick={() => setMenuOpen(false)}
+              style={{
+                textDecoration: 'none', fontSize: 15, fontWeight: 500, color: C.textSub,
+                padding: '8px 0',
+              }}>{l}</a>
+          ))}
+          <div style={{ height: 1, background: C.border }} />
+          <button onClick={onToggleTheme} style={{
+            textAlign: 'left', background: 'transparent', border: 'none',
+            color: isImperial ? '#c2ab91' : '#818cf8', fontSize: 14, fontWeight: 600,
+            cursor: 'pointer', padding: '4px 0', fontFamily: C.font,
+          }}>
+            Switch to {isImperial ? 'Modern' : 'Imperial'} theme
+          </button>
+          <div style={{ display: 'flex', gap: 10, paddingBottom: 4 }}>
+            <Btn variant="ghost"   onClick={() => { onSignIn();     setMenuOpen(false) }} C={C} theme={theme}>Sign in</Btn>
+            <Btn variant="primary" onClick={() => { onGetStarted(); setMenuOpen(false) }} C={C} theme={theme}>Get started</Btn>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @media (max-width: 767px) {
+          .navbar-links, .navbar-ctas { display: none !important; }
+          .navbar-hamburger { display: flex !important; }
+          nav { padding: 0 20px !important; }
+        }
+      `}</style>
     </nav>
   )
 }
@@ -198,7 +267,7 @@ function BinaryRain({ theme }) {
 }
 
 /* ─── Hero ───────────────────────────────────────────────── */
-function Hero({ onOpen, C, theme }) {
+function Hero({ onGetStarted, C, theme }) {
   const isImperial = theme === 'imperial'
   return (
     <section style={{
@@ -268,7 +337,7 @@ function Hero({ onOpen, C, theme }) {
         {/* CTAs */}
         <div className="animate-fade-in-up animate-delay-300"
           style={{ display:'flex', gap:12, justifyContent:'center', flexWrap:'wrap' }}>
-          <Btn variant="primary" size="lg" onClick={onOpen} C={C} theme={theme}>
+          <Btn variant="primary" size="lg" onClick={onGetStarted} C={C} theme={theme}>
             {isImperial ? '⚜ Enter the Vault' : 'Start for free →'}
           </Btn>
           <Btn variant="outline" size="lg" href="#how-it-works" C={C} theme={theme}>
@@ -440,7 +509,7 @@ function StepRow({ n, title, desc, last, C, theme }) {
 }
 
 /* ─── CTA ────────────────────────────────────────────────── */
-function Cta({ onOpen, C, theme }) {
+function Cta({ onGetStarted, C, theme }) {
   const isImperial = theme === 'imperial'
   return (
     <section style={{ padding:'100px 48px', textAlign:'center' }}>
@@ -478,7 +547,7 @@ function Cta({ onOpen, C, theme }) {
             ? 'Join the ranks of Monartech and command your projects, tasks, and estates — with imperial precision.'
             : 'Free to start. No credit card. Just sign up, invite your team, and start getting things done.'}
         </p>
-        <Btn variant="primary" size="lg" onClick={onOpen} C={C} theme={theme}>
+        <Btn variant="primary" size="lg" onClick={onGetStarted} C={C} theme={theme}>
           {isImperial ? '⚜ Enter the Imperial Portal' : 'Create your free account →'}
         </Btn>
       </div>
@@ -503,10 +572,9 @@ function Footer({ C }) {
       </p>
       <div style={{ display:'flex', gap:20 }}>
         {['Privacy','Terms','Contact'].map(l => (
-          <a key={l} href="#" style={{ fontSize:13, color:C.textMuted, textDecoration:'none', transition:'color 0.15s' }}
-            onMouseEnter={e => e.currentTarget.style.color = C.textSub}
-            onMouseLeave={e => e.currentTarget.style.color = C.textMuted}
-          >{l}</a>
+          <span key={l} style={{ fontSize:13, color:C.textMuted, cursor:'default', opacity: 0.5 }}
+            title="Coming soon"
+          >{l}</span>
         ))}
       </div>
     </footer>
