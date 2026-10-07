@@ -342,7 +342,7 @@ function TaskDetailModal({ task, statuses, editLevel, onUpdate, onClose, onRemov
   }, [])
 
   function handleClose() {
-    if (isDirty) { setDiscardWarning(true); return }
+    if (editLevel === 'full' && isDirty) { setDiscardWarning(true); return }
     doClose()
   }
   function doClose() {
@@ -975,11 +975,14 @@ export default function PlanBoardPage() {
   // Auto-open a specific task when navigated from activity feed
   useEffect(() => {
     const openTaskId = location.state?.openTaskId
-    if (!openTaskId) return
-    // Wait until tasks are loaded, then find and open the task
-    const task = tasks.find(t => t.id === openTaskId)
-    if (task) setSelectedTask(task)
-  }, [location.state?.openTaskId, tasks])
+    if (!openTaskId || tasksLoading) return
+    const task = tasks.find(t => t.id === Number(openTaskId))
+    if (task) {
+      setSelectedTask(task)
+      // Clear the state so this doesn't re-fire on every subsequent tasks update
+      window.history.replaceState({}, '')
+    }
+  }, [location.state?.openTaskId, tasksLoading])
 
   // Fetch plan title for the page header
   useEffect(() => {

@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useToast } from '../hooks/useToast'
+import { usePlans } from '../contexts/PlansContext'
 import apiClient from '../lib/apiClient'
 import SkeletonCard from '../components/shared/SkeletonCard'
 
@@ -99,87 +100,81 @@ const EVENT_COLOR = {
 function timeAgo(iso) {
   if (!iso) return ''
   const diff = (Date.now() - new Date(iso)) / 1000
-  if (diff < 60)   return 'just now'
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+  if (diff < 60)    return 'just now'
+  if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
   return `${Math.floor(diff / 86400)}d ago`
+}
+
+function buildSentence(event) {
+  const changes = event.changes ?? []
+  const type    = event.event_type
+
+  if (type === 'created')   return 'created this task'
+  if (type === 'completed') return `marked as ${changes[0]?.replace('marked as ', '') || 'done'}`
+  if (type === 'reopened')  return `reopened → ${changes[0]?.replace('reopened → ', '') || 'open'}`
+
+  // updated — build a natural sentence from changes list
+  if (changes.length === 0) return 'updated this task'
+  if (changes.length === 1) {
+    const c = changes[0]
+    if (c === 'title')           return 'renamed this task'
+    if (c === 'description')     return 'updated the description'
+    if (c === 'due date removed') return 'removed the due date'
+    if (c.startsWith('status →'))   return `moved to ${c.replace('status → ', '')}`
+    if (c.startsWith('priority →')) return `changed priority to ${c.replace('priority → ', '')}`
+    if (c.startsWith('due date →')) return `set due date to ${c.replace('due date → ', '')}`
+    if (c === 'archived')   return 'archived this task'
+    if (c === 'unarchived') return 'unarchived this task'
+    return `updated ${c}`
+  }
+  // multiple changes — summarise
+  const hasStatus = changes.some(c => c.startsWith('status →'))
+  const statusChange = changes.find(c => c.startsWith('status →'))
+  if (hasStatus && changes.length === 1) return `moved to ${statusChange.replace('status → ', '')}`
+  if (hasStatus) return `moved to ${statusChange.replace('status → ', '')} and updated ${changes.length - 1} field${changes.length - 1 > 1 ? 's' : ''}`
+  return `updated ${changes.length} fields`
 }
 
 function ActivityItem({ event, currentUsername }) {
   const navigate = useNavigate()
   const style    = EVENT_COLOR[event.event_type] ?? EVENT_COLOR.updated
-  const verb     = event.event_type === 'completed' ? 'completed'
-                 : event.event_type === 'created'   ? 'created'
-                 : event.event_type === 'reopened'  ? 'reopened'
-                 : 'updated'
 
   const isYou      = !!event.actor && event.actor === currentUsername
   const actorLabel = isYou ? 'You' : (event.actor ?? 'Someone')
+  const sentence   = buildSentence(event)
 
-  // Clicking the task title → navigate to the plan board and open the task modal
   function handleTaskClick(e) {
     e.preventDefault()
-    navigate(`/plans/${event.plan_id}`, { state: { openTaskId: event.task_id } })
+    navigate(`/plans/${event.plan_id}`, { state: { openTaskId: Number(event.task_id) } })
   }
-
-  const changes = event.changes ?? []
 
   return (
     <div style={{
-      display: 'flex', flexDirection: 'column', gap: 6,
-      padding: '10px 12px', borderRadius: 10,
+      padding: '9px 11px', borderRadius: 10,
       background: style.bg, border: `1px solid ${style.border}`,
     }}>
-      {/* Top row: icon + text + time */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-        <span style={{
-          width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 10, fontWeight: 700, color: style.color,
-          background: 'rgba(0,0,0,0.2)', marginTop: 1,
-        }}>
-          {EVENT_ICON[event.event_type]}
+      <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text)', fontWeight: 500, lineHeight: 1.45 }}>
+        <span style={{ color: isYou ? 'var(--color-primary)' : style.color, fontWeight: 600 }}>
+          {actorLabel}
         </span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text)', fontWeight: 500, lineHeight: 1.4 }}>
-            <span style={{ color: isYou ? 'var(--color-primary)' : style.color, fontWeight: 600 }}>
-              {actorLabel}
-            </span>
-            {' '}{verb}{' '}
-            <a
-              href={`/plans/${event.plan_id}`}
-              onClick={handleTaskClick}
-              style={{ color: 'var(--color-text)', fontWeight: 600, cursor: 'pointer',
-                textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.25)',
-                textUnderlineOffset: 3 }}
-            >
-              {event.task_title}
-            </a>
-          </p>
-          <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--color-text-muted)' }}>
-            {event.plan_title} · {timeAgo(event.timestamp)}
-          </p>
-        </div>
-      </div>
-
-      {/* Change summary badges — right edge of card */}
-      {changes.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, paddingLeft: 28 }}>
-          {changes.map((c, i) => (
-            <span key={i} style={{
-              fontSize: 10, fontWeight: 600, padding: '2px 6px',
-              borderRadius: 4,
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: 'var(--color-text-muted)',
-              letterSpacing: '0.02em',
-              whiteSpace: 'nowrap',
-            }}>
-              {c}
-            </span>
-          ))}
-        </div>
-      )}
+        {' '}{sentence}{' '}
+        <a
+          href={`/plans/${event.plan_id}`}
+          onClick={handleTaskClick}
+          style={{
+            color: 'var(--color-text)', fontWeight: 600, cursor: 'pointer',
+            textDecoration: 'underline',
+            textDecorationColor: 'rgba(255,255,255,0.2)',
+            textUnderlineOffset: 3,
+          }}
+        >
+          {event.task_title}
+        </a>
+      </p>
+      <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--color-text-muted)' }}>
+        {event.plan_title} · {timeAgo(event.timestamp)}
+      </p>
     </div>
   )
 }
@@ -193,19 +188,143 @@ function EmptyState({ icon, text }) {
   )
 }
 
+// ─── ActivityFeed ─────────────────────────────────────────────────────────────
+const FILTERS = [
+  { key: 'today',     label: 'Today' },
+  { key: 'yesterday', label: 'Yesterday' },
+  { key: 'all',       label: 'All' },
+]
+
+function ActivityFeed({ currentUsername }) {
+  const [activity,   setActivity]   = useState([])
+  const [loading,    setLoading]    = useState(true)
+  const [filter,     setFilter]     = useState('today')
+  const [livePulse,  setLivePulse]  = useState(false)
+  const intervalRef = useRef(null)
+
+  async function fetchActivity(f = filter, silent = false) {
+    if (!silent) setLoading(true)
+    try {
+      const { data } = await apiClient.get('/api/activity/', {
+        params: { limit: 30, filter: f },
+      })
+      setActivity(data)
+      if (silent) {
+        // pulse the live dot to signal a refresh happened
+        setLivePulse(true)
+        setTimeout(() => setLivePulse(false), 800)
+      }
+    } catch {}
+    finally { if (!silent) setLoading(false) }
+  }
+
+  // Fetch when filter changes
+  useEffect(() => {
+    fetchActivity(filter, false)
+  }, [filter])
+
+  // 30s auto-poll — silent refresh, no loading spinner
+  useEffect(() => {
+    intervalRef.current = setInterval(() => fetchActivity(filter, true), 30_000)
+    return () => clearInterval(intervalRef.current)
+  }, [filter])
+
+  return (
+    <div style={{
+      position: 'sticky', top: 20,
+      background: 'var(--color-surface)',
+      border: '1px solid var(--color-border)',
+      borderRadius: 14, overflow: 'hidden',
+      display: 'flex', flexDirection: 'column',
+    }}>
+      {/* Header */}
+      <div style={{
+        padding: '14px 16px 10px',
+        borderBottom: '1px solid var(--color-border)',
+        flexShrink: 0,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            {/* Live dot */}
+            <span style={{
+              width: 7, height: 7, borderRadius: '50%',
+              background: '#4ade80',
+              display: 'inline-block', flexShrink: 0,
+              boxShadow: livePulse ? '0 0 0 4px rgba(74,222,128,0.25)' : '0 0 0 0 transparent',
+              transition: 'box-shadow 0.4s ease',
+            }} />
+            <h3 className="m-0 text-[15px] font-bold" style={{ color: 'var(--color-text)' }}>
+              Activity
+            </h3>
+          </div>
+          <button
+            onClick={() => fetchActivity(filter, false)}
+            aria-label="Refresh activity"
+            title="Refresh"
+            style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: 15, padding: 2, lineHeight: 1 }}
+          >
+            ↻
+          </button>
+        </div>
+
+        {/* Filter tabs */}
+        <div style={{ display: 'flex', gap: 4 }}>
+          {FILTERS.map(f => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              style={{
+                flex: 1, height: 26,
+                borderRadius: 6,
+                border: filter === f.key ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
+                background: filter === f.key ? 'var(--color-primary-dim)' : 'transparent',
+                color: filter === f.key ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                fontFamily: 'var(--font-sans)',
+                transition: 'all 0.15s',
+              }}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Scrollable list — shows ~5 items, scrollable beyond */}
+      <div style={{
+        overflowY: 'auto',
+        maxHeight: 380,   /* ~5 items */
+        padding: 10,
+        display: 'flex', flexDirection: 'column', gap: 6,
+      }}>
+        {loading
+          ? [1, 2, 3, 4, 5].map(i => (
+              <div key={i} style={{ height: 52, borderRadius: 10, background: 'var(--color-surface-2)', opacity: 0.5 }} />
+            ))
+          : activity.length === 0
+            ? (
+              <p style={{ margin: '12px 0', fontSize: 13, color: 'var(--color-text-muted)', textAlign: 'center' }}>
+                {filter === 'today' ? 'No activity today.' : filter === 'yesterday' ? 'No activity yesterday.' : 'No activity yet.'}
+              </p>
+            )
+            : activity.map(ev => (
+                <ActivityItem key={ev.id} event={ev} currentUsername={currentUsername} />
+              ))
+        }
+      </div>
+    </div>
+  )
+}
+
 // ─── DashboardPage ────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { user } = useAuth()
   const { addToast } = useToast()
   const navigate = useNavigate()
+  const { plans, plansLoading, plansError, addPlan, refreshPlans } = usePlans()
 
   const [wgMembers,    setWgMembers]    = useState([])
   const [wgLoading,    setWgLoading]    = useState(true)
-  const [plans,        setPlans]        = useState([])
-  const [plansLoading, setPlansLoading] = useState(true)
-  const [plansError,   setPlansError]   = useState(null)
-  const [activity,     setActivity]     = useState([])
-  const [actLoading,   setActLoading]   = useState(true)
 
   // selected workgroup IDs for filter (null = All)
   const [selectedWg, setSelectedWg]    = useState(null)
@@ -225,25 +344,7 @@ export default function DashboardPage() {
     finally { setWgLoading(false) }
   }
 
-  async function loadPlans() {
-    setPlansLoading(true); setPlansError(null)
-    try {
-      const { data } = await apiClient.get('/api/plans/')
-      setPlans(data.results ?? data)
-    } catch { setPlansError('Could not load plans.') }
-    finally { setPlansLoading(false) }
-  }
-
-  async function loadActivity() {
-    setActLoading(true)
-    try {
-      const { data } = await apiClient.get('/api/activity/', { params: { limit: 15 } })
-      setActivity(data)
-    } catch {}
-    finally { setActLoading(false) }
-  }
-
-  useEffect(() => { Promise.all([loadWorkgroups(), loadPlans(), loadActivity()]) }, [])
+  useEffect(() => { loadWorkgroups() }, [])
 
   async function handleCreatePlan(e) {
     e.preventDefault()
@@ -254,9 +355,8 @@ export default function DashboardPage() {
       if (selectedWg && selectedWg !== 'personal') payload.workgroup = selectedWg
       const { data } = await apiClient.post('/api/plans/', payload)
       addToast('success', 'Plan created')
-      setPlans(prev => [...prev, data])
+      addPlan(data)           // push into shared context — sidebar updates instantly
       setPlanTitle(''); setPlanDesc(''); setShowPlanForm(false)
-      window.dispatchEvent(new CustomEvent('plan:created'))
       navigate(`/plans/${data.id}`)
     } catch (err) {
       addToast('error', err?.response?.data?.detail ?? 'Failed to create plan.')
@@ -416,8 +516,8 @@ export default function DashboardPage() {
 
             {plansError && (
               <div className="banner-error mb-3">
-                {plansError}
-                <button onClick={loadPlans} className="btn btn-danger btn-sm">Retry</button>
+                Could not load plans.
+                <button onClick={refreshPlans} className="btn btn-danger btn-sm">Retry</button>
               </div>
             )}
 
@@ -433,44 +533,9 @@ export default function DashboardPage() {
 
         </div>
 
-        {/* ── Right column — Recent Activity ── */}
+        {/* ── Right column — Activity Feed ── */}
         <aside>
-          <div style={{
-            position: 'sticky', top: 20,
-            background: 'var(--color-surface)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 14, overflow: 'hidden',
-          }}>
-            <div style={{
-              padding: '14px 16px 12px',
-              borderBottom: '1px solid var(--color-border)',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            }}>
-              <div>
-                <p className="page-label" style={{ marginBottom: 2 }}>Live</p>
-                <h3 className="m-0 text-[15px] font-bold" style={{ color: 'var(--color-text)' }}>
-                  Recent Activity
-                </h3>
-              </div>
-              <button onClick={loadActivity} title="Refresh"
-                style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: 16 }}>
-                ↻
-              </button>
-            </div>
-
-            <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {actLoading
-                ? [1,2,3].map(i => (
-                    <div key={i} style={{ height: 56, borderRadius: 10, background: 'var(--color-surface-2)', opacity: 0.5 }} />
-                  ))
-                : activity.length === 0
-                  ? <p style={{ margin: '8px 0', fontSize: 13, color: 'var(--color-text-muted)', textAlign: 'center' }}>
-                      No recent activity.
-                    </p>
-                  : activity.map(ev => <ActivityItem key={ev.id} event={ev} currentUsername={user?.username} />)
-              }
-            </div>
-          </div>
+          <ActivityFeed currentUsername={user?.username} />
         </aside>
 
       </div>

@@ -3,7 +3,8 @@ import { useParams, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import apiClient from '../lib/apiClient'
 import { useToast } from '../hooks/useToast'
-import { usePlans } from '../hooks/usePlans'
+import { usePlans as useScopedPlans } from '../hooks/usePlans'
+import { usePlans as usePlansContext } from '../contexts/PlansContext'
 import SkeletonCard from '../components/shared/SkeletonCard'
 import ConfirmDialog from '../components/shared/ConfirmDialog'
 
@@ -29,7 +30,10 @@ export default function WorkgroupDetailPage() {
   const [addLoading,  setAddLoading]  = useState(false)
   const [removeTarget, setRemoveTarget] = useState(null)
 
-  const { plans, loading: plansLoading, error: plansError, createPlan, deletePlan } = usePlans({ workgroup: id })
+  // Scoped plans for this workgroup (local list shown on this page)
+  const { plans, loading: plansLoading, error: plansError, createPlan, deletePlan } = useScopedPlans({ workgroup: id })
+  // Global context — keeps Sidebar in sync
+  const { addPlan: addToGlobalPlans, removePlan: removeFromGlobalPlans } = usePlansContext()
 
   const [showPlanForm,      setShowPlanForm]      = useState(false)
   const [planTitle,         setPlanTitle]         = useState('')
@@ -101,7 +105,8 @@ export default function WorkgroupDetailPage() {
     if (!planTitle.trim()) return
     setPlanSaving(true)
     try {
-      await createPlan({ title: planTitle.trim(), description: planDesc.trim(), workgroup: Number(id) })
+      const newPlan = await createPlan({ title: planTitle.trim(), description: planDesc.trim(), workgroup: Number(id) })
+      addToGlobalPlans(newPlan)   // keep Sidebar in sync
       addToast('success', 'Plan created')
       setPlanTitle(''); setPlanDesc(''); setShowPlanForm(false)
     } catch (err) {
@@ -113,6 +118,7 @@ export default function WorkgroupDetailPage() {
     if (!deletePlanTarget) return
     try {
       await deletePlan(deletePlanTarget.id)
+      removeFromGlobalPlans(deletePlanTarget.id)  // keep Sidebar in sync
       addToast('success', 'Plan deleted')
     } catch (err) {
       addToast('error', err?.response?.data?.detail ?? 'Failed to delete plan.')

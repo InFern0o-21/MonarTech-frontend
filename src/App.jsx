@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { ToastProvider } from './contexts/ToastContext'
 import { ThemeProvider } from './contexts/ThemeContext'
+import { PlansProvider } from './contexts/PlansContext'
 import ProtectedRoute from './components/shared/ProtectedRoute'
 import AppShell from './components/layout/AppShell'
 import LandingPage from './pages/LandingPage'
@@ -25,20 +26,22 @@ export default function App() {
       <ThemeProvider>
         <AuthProvider>
           <ToastProvider>
-            <Routes>
-              <Route path="/" element={<RootRedirect />} />
-              <Route path="/verify-email" element={<EmailVerificationPage />} />
-              <Route element={<ProtectedRoute />}>
-                <Route element={<AppShell />}>
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/workgroups" element={<WorkgroupsPage />} />
-                  <Route path="/workgroups/:id" element={<WorkgroupDetailPage />} />
-                  <Route path="/plans/:id" element={<PlanBoardPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
+            <PlansProvider>
+              <Routes>
+                <Route path="/" element={<RootRedirect />} />
+                <Route path="/verify-email" element={<EmailVerificationPage />} />
+                <Route element={<ProtectedRoute />}>
+                  <Route element={<AppShell />}>
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/workgroups" element={<WorkgroupsPage />} />
+                    <Route path="/workgroups/:id" element={<WorkgroupDetailPage />} />
+                    <Route path="/plans/:id" element={<PlanBoardPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                  </Route>
                 </Route>
-              </Route>
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </PlansProvider>
             <Toast />
           </ToastProvider>
         </AuthProvider>
